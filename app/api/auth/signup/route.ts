@@ -20,7 +20,14 @@ export async function POST(request: NextRequest) {
 
     // Admin registration requires a code
     if (role === "ADMIN") {
-      const expectedAdminCode = process.env.ADMIN_REGISTRATION_CODE || "110238870";
+      const expectedAdminCode = process.env.ADMIN_REGISTRATION_CODE?.trim();
+      if (!expectedAdminCode) {
+        return NextResponse.json(
+          { error: "Admin registration is disabled until ADMIN_REGISTRATION_CODE is configured." },
+          { status: 503 }
+        );
+      }
+
       if (!adminCode || adminCode !== expectedAdminCode) {
         return NextResponse.json(
           { error: "Invalid admin registration code. Contact system administrators." },
@@ -42,7 +49,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Check if email already exists (based on username)
-    const emailToUse = `${username}@taskhive.local`;
+    const emailToUse = `${username}@campus-gigs.local`;
     const existingEmail = await prisma.user.findUnique({
       where: { email: emailToUse },
     });
@@ -121,7 +128,7 @@ export async function POST(request: NextRequest) {
     if (errorMessage.includes("Can't reach database") || errorMessage.includes("ECONNREFUSED")) {
       return NextResponse.json(
         {
-          error: "Database connection failed. Please check your DATABASE_URL in .env.local.",
+          error: "Database connection failed. Please check your DATABASE_URL environment variable.",
           details: errorMessage,
         },
         { status: 503 }

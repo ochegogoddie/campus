@@ -1,34 +1,62 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Campus Gigs
 
-## Getting Started
+Campus Gigs is a Next.js application for posting gigs, finding collaborators, managing project teams, and messaging inside a campus community.
 
-First, run the development server:
+## Tech Stack
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+- Next.js 16 with the App Router
+- NextAuth credentials authentication
+- Prisma with PostgreSQL
+- Cloudinary file uploads
+- Tailwind CSS
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## Local Setup
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+1. Install dependencies:
 
-## Learn More
+   ```bash
+   npm install
+   ```
 
-To learn more about Next.js, take a look at the following resources:
+2. Configure the required environment variables in `.env.gigs` locally and in Render:
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+   ```env
+   DATABASE_URL=
+   NEXTAUTH_SECRET=
+   NEXTAUTH_URL=http://localhost:3000
+   ADMIN_REGISTRATION_CODE=
+   CLOUDINARY_CLOUD_NAME=
+   CLOUDINARY_API_KEY=
+   CLOUDINARY_API_SECRET=
+   ```
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+3. Generate the Prisma client and sync the schema:
 
-## Deploy on Vercel
+   ```bash
+   npm run db:generate
+   npm run db:push
+   ```
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+4. Start the development server:
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+   ```bash
+   npm run dev
+   ```
+
+## Render Deployment Notes
+
+- Use a PostgreSQL database on Render and paste its connection string into `DATABASE_URL`.
+- Set `NEXTAUTH_URL` to your Render service URL, for example `https://<your-render-service>.onrender.com`.
+- Copy the values from `.env.gigs` into the Render environment settings before the first deploy.
+
+## Available Scripts
+
+- `npm run dev` starts the local Next.js dev server.
+- `npm run build` generates the Prisma client, syncs the schema, and builds the app.
+- `npm run start` starts the production server.
+- `npm run lint` runs ESLint.
+- `npm run db:push` syncs the Prisma schema to the configured database.
+- `npm run db:generate` regenerates the Prisma client.
+- `npm run db:studio` opens Prisma Studio.
+- `npm run db:reset` force-resets the configured database schema.
+- `npm run db:test` checks that Prisma can connect and query the database.

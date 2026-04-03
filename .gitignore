@@ -16,6 +16,7 @@ pnpm-debug.log*
 .env.development.local
 .env.test.local
 .env.production.local
+.env.gigs
 
 # OS/editor files
 .DS_Store
@@ -23,3 +24,5 @@ Thumbs.db
 .vscode/
 .idea/
 .codex-dev-*.log
+
+prisma/prisma/

@@ -4,7 +4,6 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useSession, signOut } from "next-auth/react";
 import { useState, useEffect } from "react";
-import { useTheme } from "next-themes";
 import { Button } from "@/components/ui/button";
 
 export default function Navbar() {
@@ -16,12 +15,6 @@ export default function Navbar() {
   const [showNotifications, setShowNotifications] = useState(false);
   const [notifications, setNotifications] = useState<{ id: string; message: string; read: boolean; createdAt: string }[]>([]);
   const [isSigningOut, setIsSigningOut] = useState(false);
-  const { theme, setTheme } = useTheme();
-  const [mounted, setMounted] = useState(false);
-  useEffect(() => {
-    const frame = requestAnimationFrame(() => setMounted(true));
-    return () => cancelAnimationFrame(frame);
-  }, []);
 
   const handleSignOut = async () => {
     if (isSigningOut) return;
@@ -141,25 +134,6 @@ export default function Navbar() {
                     Post a Task
                   </Button>
                 </Link>
-                {/* Theme Toggle */}
-                {mounted && (
-                  <button
-                    onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
-                    className="w-8 h-8 flex items-center justify-center text-slate-600 hover:text-slate-900 transition-colors rounded-md hover:bg-slate-200"
-                    aria-label="Toggle theme"
-                    title={theme === "dark" ? "Switch to light mode" : "Switch to dark mode"}
-                  >
-                    {theme === "dark" ? (
-                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364-6.364l-.707.707M6.343 17.657l-.707.707M17.657 17.657l-.707-.707M6.343 6.343l-.707-.707M12 7a5 5 0 100 10 5 5 0 000-10z" />
-                      </svg>
-                    ) : (
-                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
-                      </svg>
-                    )}
-                  </button>
-                )}
                 {/* Notification Bell */}
                 <div className="relative">
                   <button
