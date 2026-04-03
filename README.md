@@ -24,11 +24,12 @@ Campus Gigs is a Next.js application for posting gigs, finding collaborators, ma
    DATABASE_URL=
    NEXTAUTH_SECRET=
    NEXTAUTH_URL=http://localhost:3000
-   ADMIN_REGISTRATION_CODE=
    CLOUDINARY_CLOUD_NAME=
    CLOUDINARY_API_KEY=
    CLOUDINARY_API_SECRET=
    ```
+
+   The built-in admin account is provisioned automatically by the server and does not require an environment variable.
 
 3. Generate the Prisma client and sync the schema:
 

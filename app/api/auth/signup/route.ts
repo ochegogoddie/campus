@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { hash } from "bcryptjs";
 import { prisma } from "@/lib/prisma";
+import { isReservedUsername } from "@/lib/admin";
 import { z } from "zod";
 import { Prisma } from "@prisma/client";
 
@@ -9,31 +10,19 @@ const signupSchema = z.object({
   phone: z.string().optional(),
   password: z.string().min(8, "Password must be at least 8 characters"),
   name: z.string().min(2, "Name must be at least 2 characters"),
-  role: z.enum(["FREELANCER", "CLIENT", "ADMIN"]).default("FREELANCER"),
-  adminCode: z.string().optional(), // For admin registration
+  role: z.enum(["FREELANCER", "CLIENT"]).default("FREELANCER"),
 });
 
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { username, phone, password, name, role, adminCode } = signupSchema.parse(body);
+    const { username, phone, password, name, role } = signupSchema.parse(body);
 
-    // Admin registration requires a code
-    if (role === "ADMIN") {
-      const expectedAdminCode = process.env.ADMIN_REGISTRATION_CODE?.trim();
-      if (!expectedAdminCode) {
-        return NextResponse.json(
-          { error: "Admin registration is disabled until ADMIN_REGISTRATION_CODE is configured." },
-          { status: 503 }
-        );
-      }
-
-      if (!adminCode || adminCode !== expectedAdminCode) {
-        return NextResponse.json(
-          { error: "Invalid admin registration code. Contact system administrators." },
-          { status: 403 }
-        );
-      }
+    if (isReservedUsername(username)) {
+      return NextResponse.json(
+        { error: "This username is reserved. Please choose a different username." },
+        { status: 400 }
+      );
     }
 
     // Check if username exists

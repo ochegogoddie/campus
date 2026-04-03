@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth/next";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { isBuiltInAdmin } from "@/lib/admin";
 import type { Prisma } from "@prisma/client";
 import { z } from "zod";
 
@@ -12,7 +13,7 @@ async function isAdmin() {
 }
 
 const updateUserSchema = z.object({
-  role: z.enum(["FREELANCER", "CLIENT", "ADMIN"]).optional(),
+  role: z.enum(["FREELANCER", "CLIENT"]).optional(),
   name: z.string().optional(),
   bio: z.string().optional(),
 });
@@ -32,6 +33,18 @@ export async function PATCH(
 
     const body = await request.json();
     const { role, name, bio } = updateUserSchema.parse(body);
+
+    const userToUpdate = await prisma.user.findUnique({
+      where: { id },
+      select: { username: true },
+    });
+
+    if (isBuiltInAdmin(userToUpdate)) {
+      return NextResponse.json(
+        { error: "The built-in admin account cannot be modified here." },
+        { status: 400 }
+      );
+    }
 
     const updateData: Prisma.UserUpdateInput = {};
     if (role) updateData.role = role;
@@ -86,8 +99,15 @@ export async function DELETE(
 
     const userToDelete = await prisma.user.findUnique({
       where: { id },
-      select: { role: true },
+      select: { role: true, username: true },
     });
+
+    if (isBuiltInAdmin(userToDelete)) {
+      return NextResponse.json(
+        { error: "The built-in admin account cannot be deleted." },
+        { status: 400 }
+      );
+    }
 
     if (userToDelete?.role === "ADMIN" && adminCount <= 1) {
       return NextResponse.json(

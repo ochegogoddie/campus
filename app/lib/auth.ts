@@ -2,6 +2,7 @@ import type { NextAuthOptions } from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
 import { compare } from "bcryptjs";
 import { prisma } from "./prisma";
+import { ADMIN_USERNAME, ensureAdminUser } from "./admin";
 
 export const authOptions: NextAuthOptions = {
   providers: [
@@ -17,8 +18,14 @@ export const authOptions: NextAuthOptions = {
             return null;
           }
 
+          const normalizedUsername = credentials.username.trim();
+
+          if (normalizedUsername.toLowerCase() === ADMIN_USERNAME) {
+            await ensureAdminUser();
+          }
+
           const user = await prisma.user.findUnique({
-            where: { username: credentials.username },
+            where: { username: normalizedUsername },
           });
 
           if (!user) {

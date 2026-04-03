@@ -86,23 +86,6 @@ export default function AdminDashboard() {
     }
   };
 
-  const handleApproveAdmin = async (userId: string) => {
-    try {
-      const res = await fetch(`/api/admin/users/${userId}`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ role: 'ADMIN' }),
-      });
-
-      if (res.ok) {
-        fetchAdminData();
-      }
-    } catch (err) {
-      setError('Error updating user role');
-      console.error(err);
-    }
-  };
-
   const handleSignOut = async () => {
     if (isSigningOut) return;
 
@@ -179,7 +162,6 @@ export default function AdminDashboard() {
             filterRole={filterRole}
             onFilterChange={setFilterRole}
             onDeleteUser={handleDeleteUser}
-            onApproveAdmin={handleApproveAdmin}
           />
         )}
         {activeTab === 'moderation' && <ModerationTab />}
@@ -227,14 +209,12 @@ function UsersTab({
   filterRole,
   onFilterChange,
   onDeleteUser,
-  onApproveAdmin,
 }: {
   users: User[];
   loading: boolean;
   filterRole: RoleFilter;
   onFilterChange: (role: RoleFilter) => void;
   onDeleteUser: (id: string) => void;
-  onApproveAdmin: (id: string) => void;
 }) {
   return (
     <div>
@@ -292,20 +272,18 @@ function UsersTab({
                       </span>
                     </td>
                     <td className="px-6 py-4 text-sm flex gap-2">
-                      {user.role !== 'ADMIN' && (
+                      {user.role === 'ADMIN' ? (
+                        <span className="px-3 py-1 bg-slate-100 text-slate-600 rounded text-xs font-medium">
+                          Protected
+                        </span>
+                      ) : (
                         <button
-                          onClick={() => onApproveAdmin(user.id)}
-                          className="px-3 py-1 bg-blue-100 text-blue-800 rounded text-xs font-medium hover:bg-blue-200"
+                          onClick={() => onDeleteUser(user.id)}
+                          className="px-3 py-1 bg-red-100 text-red-800 rounded text-xs font-medium hover:bg-red-200"
                         >
-                          Make Admin
+                          Delete
                         </button>
                       )}
-                      <button
-                        onClick={() => onDeleteUser(user.id)}
-                        className="px-3 py-1 bg-red-100 text-red-800 rounded text-xs font-medium hover:bg-red-200"
-                      >
-                        Delete
-                      </button>
                     </td>
                   </tr>
                 ))}
