@@ -48,9 +48,9 @@ export default function PageHero({
           </p>
           {actions && <div className="mt-7 flex flex-col gap-3 sm:flex-row sm:flex-wrap">{actions}</div>}
           {stats.length > 0 && (
-            <div className="mt-8 grid gap-3 sm:grid-cols-3">
+            <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:flex-wrap">
               {stats.map((stat) => (
-                <div key={stat.label} className="metric-card">
+                <div key={stat.label} className="metric-card sm:min-w-[11rem] sm:flex-1">
                   <p
                     className={`text-2xl font-semibold tracking-[-0.03em] ${
                       accentClasses[stat.accent ?? "amber"]

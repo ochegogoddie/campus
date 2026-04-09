@@ -6,6 +6,7 @@ import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import Navbar from "@/components/Navbar";
 import PageHero from "@/components/PageHero";
+import { getProjectCapacitySummary } from "@/lib/project-capacity";
 import {
   FolderStackIcon,
   GlobeIcon,
@@ -188,10 +189,16 @@ export default function ProjectsPage() {
         ) : (
           <section className="grid gap-5 md:grid-cols-2 xl:grid-cols-3">
             {projects.map((project) => {
-              const progress = Math.min(
-                100,
-                Math.round((project._count.members / project.maxMembers) * 100)
+              const capacity = getProjectCapacitySummary(
+                project._count.members,
+                project.maxMembers
               );
+              const statusClasses =
+                capacity.status === "full"
+                  ? "border-rose-200 bg-rose-50 text-rose-700 dark:border-rose-900/70 dark:bg-rose-950/30 dark:text-rose-300"
+                  : capacity.status === "almost-full"
+                  ? "border-amber-200 bg-amber-50 text-amber-700 dark:border-amber-900/70 dark:bg-amber-950/30 dark:text-amber-300"
+                  : "border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-900/70 dark:bg-emerald-950/30 dark:text-emerald-300";
 
               return (
                 <Link key={project.id} href={`/project/${project.id}`} className="group">
@@ -203,6 +210,11 @@ export default function ProjectsPage() {
                     <p className="mt-3 line-clamp-3 text-sm leading-7 text-slate-600 dark:text-slate-300">
                       {project.description}
                     </p>
+                    <div
+                      className={`mt-4 inline-flex rounded-full border px-3 py-1 text-xs font-semibold ${statusClasses}`}
+                    >
+                      {capacity.label}
+                    </div>
                     <div className="mt-6 grid gap-3 sm:grid-cols-2">
                       <div className="rounded-[1.1rem] border border-slate-200 bg-white/70 px-4 py-3 dark:border-slate-800 dark:bg-slate-950/45">
                         <div className="flex items-center gap-2 text-xs uppercase tracking-[0.18em] text-slate-400">
@@ -227,12 +239,12 @@ export default function ProjectsPage() {
                       <div className="h-2 rounded-full bg-slate-200 dark:bg-slate-800">
                         <div
                           className="h-2 rounded-full bg-gradient-to-r from-cyan-500 to-blue-500"
-                          style={{ width: `${progress}%` }}
+                          style={{ width: `${capacity.progress}%` }}
                         />
                       </div>
                       <div className="mt-3 flex items-center justify-between text-sm text-slate-500 dark:text-slate-400">
-                        <span>Team progress</span>
-                        <span>{progress}% full</span>
+                        <span>{project._count.members}/{project.maxMembers} members</span>
+                        <span>{capacity.detail}</span>
                       </div>
                     </div>
                   </article>

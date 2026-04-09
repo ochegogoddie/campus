@@ -20,6 +20,7 @@ export async function GET() {
       notifications,
       unreadMessages,
       totalUsers,
+      clients,
       totalGigs,
       totalProjects,
     ] = await Promise.all([
@@ -29,6 +30,7 @@ export async function GET() {
       prisma.notification.count({ where: { userId, read: false } }),
       prisma.message.count({ where: { recipientId: userId, read: false } }),
       prisma.user.count(),
+      prisma.user.count({ where: { role: "CLIENT" } }),
       prisma.gig.count(),
       prisma.project.count(),
     ]);
@@ -42,6 +44,7 @@ export async function GET() {
       unreadMessages,
       // platform-wide
       totalUsers,
+      clients,
       totalGigs,
       totalProjects,
     });

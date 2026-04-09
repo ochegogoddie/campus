@@ -6,6 +6,7 @@ import { useSession } from "next-auth/react";
 import { Button } from "@/components/ui/button";
 import Navbar from "@/components/Navbar";
 import PageHero from "@/components/PageHero";
+import { getProjectCapacitySummary } from "@/lib/project-capacity";
 import {
   ArrowRightIcon,
   BriefcaseIcon,
@@ -31,6 +32,7 @@ interface Project {
   id: string;
   title: string;
   category: string;
+  status: string;
   _count: { members: number };
   maxMembers: number;
   createdBy: { name: string };
@@ -138,6 +140,11 @@ export default function Home() {
               label: "Freelancers active",
               value: statsLoaded ? `${stats.freelancers}` : "...",
               accent: "cyan",
+            },
+            {
+              label: "Clients registered",
+              value: statsLoaded ? `${stats.clients}` : "...",
+              accent: "violet",
             },
             {
               label: "Projects running",
@@ -260,7 +267,7 @@ export default function Home() {
               {[
                 "Live messaging between task owners, freelancers, and project members",
                 "On-platform file sharing and discussions for project collaboration",
-                "A persistent light and dark theme switcher across every page",
+                "A single-tap light and dark theme toggle across every page",
               ].map((item) => (
                 <div
                   key={item}
@@ -375,10 +382,16 @@ export default function Home() {
           ) : (
             <div className="grid gap-5 md:grid-cols-2">
               {recentProjects.map((project) => {
-                const fill = Math.min(
-                  100,
-                  Math.round((project._count.members / project.maxMembers) * 100)
+                const capacity = getProjectCapacitySummary(
+                  project._count.members,
+                  project.maxMembers
                 );
+                const statusClasses =
+                  capacity.status === "full"
+                    ? "border-rose-200 bg-rose-50 text-rose-700 dark:border-rose-900/70 dark:bg-rose-950/30 dark:text-rose-300"
+                    : capacity.status === "almost-full"
+                    ? "border-amber-200 bg-amber-50 text-amber-700 dark:border-amber-900/70 dark:bg-amber-950/30 dark:text-amber-300"
+                    : "border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-900/70 dark:bg-emerald-950/30 dark:text-emerald-300";
 
                 return (
                   <Link key={project.id} href={`/project/${project.id}`} className="group">
@@ -390,17 +403,22 @@ export default function Home() {
                       <p className="mt-4 text-sm text-slate-500 dark:text-slate-400">
                         Created by {project.createdBy.name}
                       </p>
+                      <div
+                        className={`mt-4 inline-flex rounded-full border px-3 py-1 text-xs font-semibold ${statusClasses}`}
+                      >
+                        {capacity.label}
+                      </div>
                       <div className="mt-5 h-2 rounded-full bg-slate-200 dark:bg-slate-800">
                         <div
                           className="h-2 rounded-full bg-gradient-to-r from-cyan-500 to-blue-500"
-                          style={{ width: `${fill}%` }}
+                          style={{ width: `${capacity.progress}%` }}
                         />
                       </div>
                       <div className="mt-4 flex items-center justify-between text-sm text-slate-500 dark:text-slate-400">
                         <span>
                           {project._count.members}/{project.maxMembers} members
                         </span>
-                        <span>{fill}% full</span>
+                        <span>{capacity.detail}</span>
                       </div>
                     </article>
                   </Link>

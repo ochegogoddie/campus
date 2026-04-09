@@ -13,7 +13,7 @@ async function isAdmin() {
 }
 
 const updateUserSchema = z.object({
-  role: z.enum(["FREELANCER", "CLIENT"]).optional(),
+  role: z.enum(["FREELANCER", "CLIENT", "ADMIN"]).optional(),
   name: z.string().optional(),
   bio: z.string().optional(),
 });

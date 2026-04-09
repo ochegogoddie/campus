@@ -1,359 +1,441 @@
-'use client';
+"use client";
 
-import { useState, useEffect, useCallback } from 'react';
-import { useRouter } from 'next/navigation';
-import { useSession, signOut } from 'next-auth/react';
-import { Button } from '@/components/ui/button';
+import Link from "next/link";
+import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
+import { signOut, useSession } from "next-auth/react";
+import { BrandLockup } from "@/components/Brand";
+import Avatar from "@/components/ui/Avatar";
+import { Button } from "@/components/ui/button";
+import { BriefcaseIcon, ChartIcon, FolderStackIcon, ShieldIcon, UsersIcon } from "@/components/ui/icons";
+import { getProjectCapacitySummary } from "@/lib/project-capacity";
 
-interface User {
-  id: string;
-  username: string;
-  name: string;
-  email: string;
-  role: string;
-  createdAt?: string;
-}
+type AdminTab = "overview" | "users" | "content" | "access";
+type RoleFilter = "ALL" | "FREELANCER" | "CLIENT" | "ADMIN";
+type UserRole = Exclude<RoleFilter, "ALL">;
 
+interface AdminUser { id: string; username: string; name: string; email: string; role: UserRole; createdAt?: string; }
+interface AdminGig { id: string; title: string; category: string; budget: number; status: string; createdAt: string; poster: { name: string }; _count: { applications: number }; }
+interface AdminProject { id: string; title: string; category: string; status: string; visibility: string; maxMembers: number; createdAt: string; createdBy: { name: string }; _count: { members: number }; }
 interface AdminStats {
-  totalUsers: number;
-  totalGigs: number;
-  totalProjects: number;
-  freelancers: number;
-  clients: number;
-  admins: number;
-  activeGigs: number;
-  completedGigs: number;
+  totalUsers: number; totalGigs: number; totalProjects: number; freelancers: number; clients: number; admins: number;
+  activeGigs: number; completedGigs: number; openProjects: number; fullProjects: number;
+  recentUsers: AdminUser[]; recentGigs: AdminGig[]; recentProjects: AdminProject[];
 }
 
-type RoleFilter = 'ALL' | 'FREELANCER' | 'CLIENT' | 'ADMIN';
+const protectedAdminUsername = "password";
+const roleFilters: RoleFilter[] = ["ALL", "FREELANCER", "CLIENT", "ADMIN"];
+const editableRoles: UserRole[] = ["FREELANCER", "CLIENT", "ADMIN"];
+
+const fmt = (value?: string) => (value ? new Date(value).toLocaleDateString() : "Unknown");
+const roleTone = (role: UserRole) =>
+  role === "ADMIN"
+    ? "border-rose-200 bg-rose-50 text-rose-700 dark:border-rose-900/70 dark:bg-rose-950/30 dark:text-rose-300"
+    : role === "CLIENT"
+    ? "border-violet-200 bg-violet-50 text-violet-700 dark:border-violet-900/70 dark:bg-violet-950/30 dark:text-violet-300"
+    : "border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-900/70 dark:bg-emerald-950/30 dark:text-emerald-300";
 
 export default function AdminDashboard() {
   const { data: session } = useSession();
   const router = useRouter();
-  const [activeTab, setActiveTab] = useState('overview');
+  const [activeTab, setActiveTab] = useState<AdminTab>("overview");
   const [stats, setStats] = useState<AdminStats | null>(null);
-  const [users, setUsers] = useState<User[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
+  const [users, setUsers] = useState<AdminUser[]>([]);
+  const [filterRole, setFilterRole] = useState<RoleFilter>("ALL");
+  const [roleDrafts, setRoleDrafts] = useState<Record<string, UserRole>>({});
+  const [loadingStats, setLoadingStats] = useState(true);
+  const [loadingUsers, setLoadingUsers] = useState(true);
+  const [savingUserId, setSavingUserId] = useState("");
+  const [deletingUserId, setDeletingUserId] = useState("");
   const [isSigningOut, setIsSigningOut] = useState(false);
-  const [filterRole, setFilterRole] = useState<RoleFilter>('ALL');
-
-  const fetchAdminData = useCallback(async () => {
-    try {
-      setLoading(true);
-      const [statsRes, usersRes] = await Promise.all([
-        fetch('/api/admin/stats'),
-        fetch(`/api/admin/users?role=${filterRole}`),
-      ]);
-
-      if (statsRes.ok) {
-        const statsData = await statsRes.json();
-        setStats(statsData);
-      }
-
-      if (usersRes.ok) {
-        const usersData = await usersRes.json();
-        setUsers(usersData);
-      }
-    } catch (err) {
-      setError('Failed to fetch admin data');
-      console.error(err);
-    } finally {
-      setLoading(false);
-    }
-  }, [filterRole]);
+  const [error, setError] = useState("");
 
   useEffect(() => {
-    fetchAdminData();
-  }, [fetchAdminData]);
-
-  const handleDeleteUser = async (userId: string) => {
-    if (!confirm('Are you sure you want to delete this user?')) return;
-
-    try {
-      const res = await fetch(`/api/admin/users/${userId}`, {
-        method: 'DELETE',
-      });
-
-      if (res.ok) {
-        setUsers(users.filter(u => u.id !== userId));
-      } else {
-        setError('Failed to delete user');
+    const loadStats = async () => {
+      try {
+        setLoadingStats(true);
+        const response = await fetch("/api/admin/stats");
+        if (!response.ok) throw new Error("Failed to load admin statistics");
+        setStats(await response.json());
+      } catch (fetchError) {
+        setError(fetchError instanceof Error ? fetchError.message : "Failed to load admin statistics");
+      } finally {
+        setLoadingStats(false);
       }
-    } catch (err) {
-      setError('Error deleting user');
-      console.error(err);
+    };
+    void loadStats();
+  }, []);
+
+  useEffect(() => {
+    const loadUsers = async () => {
+      try {
+        setLoadingUsers(true);
+        const response = await fetch(`/api/admin/users?role=${filterRole}`);
+        if (!response.ok) throw new Error("Failed to load users");
+        const nextUsers = (await response.json()) as AdminUser[];
+        setUsers(nextUsers);
+        setRoleDrafts(Object.fromEntries(nextUsers.map((user) => [user.id, user.role])) as Record<string, UserRole>);
+      } catch (fetchError) {
+        setError(fetchError instanceof Error ? fetchError.message : "Failed to load users");
+      } finally {
+        setLoadingUsers(false);
+      }
+    };
+    void loadUsers();
+  }, [filterRole]);
+
+  const refreshStats = async () => {
+    const response = await fetch("/api/admin/stats");
+    if (!response.ok) throw new Error("Failed to refresh admin statistics");
+    setStats(await response.json());
+  };
+
+  const refreshUsers = async () => {
+    const response = await fetch(`/api/admin/users?role=${filterRole}`);
+    if (!response.ok) throw new Error("Failed to refresh users");
+    const nextUsers = (await response.json()) as AdminUser[];
+    setUsers(nextUsers);
+    setRoleDrafts(Object.fromEntries(nextUsers.map((user) => [user.id, user.role])) as Record<string, UserRole>);
+  };
+
+  const saveRole = async (user: AdminUser) => {
+    const nextRole = roleDrafts[user.id];
+    if (!nextRole || nextRole === user.role || user.username === protectedAdminUsername) return;
+    try {
+      setError("");
+      setSavingUserId(user.id);
+      const response = await fetch(`/api/admin/users/${user.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ role: nextRole }),
+      });
+      if (!response.ok) {
+        const data = await response.json().catch(() => null);
+        throw new Error(data?.error || "Failed to update role");
+      }
+      await Promise.all([refreshStats(), refreshUsers()]);
+    } catch (saveError) {
+      setError(saveError instanceof Error ? saveError.message : "Failed to update role");
+    } finally {
+      setSavingUserId("");
+    }
+  };
+
+  const deleteUser = async (user: AdminUser) => {
+    if (user.username === protectedAdminUsername) return;
+    if (!window.confirm(`Delete ${user.name}? This action cannot be undone.`)) return;
+    try {
+      setError("");
+      setDeletingUserId(user.id);
+      const response = await fetch(`/api/admin/users/${user.id}`, { method: "DELETE" });
+      if (!response.ok) {
+        const data = await response.json().catch(() => null);
+        throw new Error(data?.error || "Failed to delete user");
+      }
+      await Promise.all([refreshStats(), refreshUsers()]);
+    } catch (deleteError) {
+      setError(deleteError instanceof Error ? deleteError.message : "Failed to delete user");
+    } finally {
+      setDeletingUserId("");
     }
   };
 
   const handleSignOut = async () => {
     if (isSigningOut) return;
-
     setIsSigningOut(true);
-
     try {
       await signOut({ redirect: false });
-      router.replace('/login');
+      router.replace("/login");
       router.refresh();
-    } catch (err) {
-      console.error('Sign out failed', err);
+    } catch {
       setIsSigningOut(false);
     }
   };
 
-  return (
-    <div className="min-h-screen bg-slate-50">
-      {/* Header */}
-      <header className="bg-white border-b border-slate-200 shadow-sm">
-        <div className="max-w-7xl mx-auto px-4 py-6 flex items-center justify-between">
-          <div>
-            <h1 className="text-3xl font-bold text-slate-900">Admin Dashboard</h1>
-            <p className="text-slate-600 mt-1">Welcome, {session?.user?.name}</p>
-          </div>
-          <button
-            onClick={handleSignOut}
-            disabled={isSigningOut}
-            className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-md transition-colors"
-          >
-            {isSigningOut ? 'Logging out...' : 'Logout'}
-          </button>
-        </div>
-      </header>
+  const overviewCards = stats
+    ? [
+        { label: "Users", value: stats.totalUsers, icon: UsersIcon, accent: "text-cyan-600 dark:text-cyan-300" },
+        { label: "Clients", value: stats.clients, icon: ChartIcon, accent: "text-violet-600 dark:text-violet-300" },
+        { label: "Open gigs", value: stats.activeGigs, icon: BriefcaseIcon, accent: "text-amber-600 dark:text-amber-300" },
+        { label: "Full teams", value: stats.fullProjects, icon: FolderStackIcon, accent: "text-rose-600 dark:text-rose-300" },
+      ]
+    : [];
 
-      {/* Navigation Tabs */}
-      <div className="bg-white border-b border-slate-200">
-        <div className="max-w-7xl mx-auto px-4">
-          <nav className="flex gap-8">
-            {[
-              { id: 'overview', label: 'Overview' },
-              { id: 'users', label: 'Users' },
-              { id: 'moderation', label: 'Moderation' },
-              { id: 'reports', label: 'Reports' },
-            ].map(tab => (
+  return (
+    <div className="app-shell">
+      <main className="page-shell space-y-8">
+        <section className="hero-card">
+          <div className="flex flex-col gap-6 lg:flex-row lg:justify-between">
+            <div className="max-w-3xl">
+              <BrandLockup href="/admin" />
+              <p className="mt-8 page-badge">Admin workspace</p>
+              <h1 className="mt-5 text-4xl font-semibold tracking-[-0.04em] text-slate-950 dark:text-slate-50">
+                Manage users, gigs, projects, and platform access from one protected dashboard.
+              </h1>
+              <p className="mt-4 max-w-2xl text-base leading-7 text-slate-600 dark:text-slate-300">
+                The built-in admin account uses username <span className="font-semibold">password</span>,
+                its password is stored as a bcrypt hash in the database, and there is no admin signup form.
+              </p>
+            </div>
+            <div className="max-w-md space-y-3">
+              <div className="rounded-[1.4rem] border border-slate-200 bg-white/70 p-4 dark:border-slate-800 dark:bg-slate-950/45">
+                <p className="text-sm font-semibold text-slate-950 dark:text-slate-50">
+                  Signed in as {session?.user?.name || "Platform Admin"}
+                </p>
+                <p className="mt-2 text-sm text-slate-500 dark:text-slate-400">
+                  Protected admin routes, protected built-in account, and no admin registration flow.
+                </p>
+              </div>
+              <div className="flex flex-wrap gap-3">
+                <Link href="/"><Button variant="outline">Back to app</Button></Link>
+                <button
+                  type="button"
+                  onClick={handleSignOut}
+                  disabled={isSigningOut}
+                  className="inline-flex items-center justify-center rounded-2xl border border-rose-300 bg-rose-50 px-4 py-2.5 text-sm font-semibold text-rose-700 transition-colors hover:bg-rose-100 disabled:opacity-60 dark:border-rose-900/70 dark:bg-rose-950/30 dark:text-rose-300"
+                >
+                  {isSigningOut ? "Signing out..." : "Sign out"}
+                </button>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {error && <div className="rounded-[1.2rem] border border-red-300 bg-red-50 px-4 py-3 text-sm text-red-800 dark:border-red-900 dark:bg-red-950/30 dark:text-red-200">{error}</div>}
+
+        <section className="section-card p-3">
+          <div className="flex flex-wrap gap-2">
+            {(["overview", "users", "content", "access"] as AdminTab[]).map((tab) => (
               <button
-                key={tab.id}
-                onClick={() => setActiveTab(tab.id)}
-                className={`px-4 py-4 font-medium border-b-2 transition-colors ${
-                  activeTab === tab.id
-                    ? 'border-amber-600 text-amber-600'
-                    : 'border-transparent text-slate-600 hover:text-slate-900'
+                key={tab}
+                type="button"
+                onClick={() => setActiveTab(tab)}
+                className={`rounded-full px-4 py-2 text-sm font-semibold transition-all ${
+                  activeTab === tab
+                    ? "bg-slate-900 text-white dark:bg-slate-100 dark:text-slate-900"
+                    : "border border-slate-300 bg-white/70 text-slate-700 hover:border-amber-300 dark:border-slate-700 dark:bg-slate-950/60 dark:text-slate-200"
                 }`}
               >
-                {tab.label}
+                {tab === "content" ? "Gigs & Projects" : tab.charAt(0).toUpperCase() + tab.slice(1)}
               </button>
             ))}
-          </nav>
-        </div>
-      </div>
-
-      {/* Main Content */}
-      <main className="max-w-7xl mx-auto px-4 py-8">
-        {error && (
-          <div className="bg-red-100 border border-red-300 text-red-800 px-4 py-3 rounded-md mb-6">
-            {error}
           </div>
+        </section>
+
+        {activeTab === "overview" && (
+          loadingStats || !stats ? <Panel label={loadingStats ? "Loading overview..." : "Overview unavailable."} /> : (
+            <div className="space-y-6">
+              <section className="grid gap-5 md:grid-cols-2 xl:grid-cols-4">
+                {overviewCards.map((item) => {
+                  const Icon = item.icon;
+                  return (
+                    <article key={item.label} className="section-card p-6">
+                      <div className="inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-slate-900 text-white shadow-sm dark:bg-slate-100 dark:text-slate-900"><Icon className="h-5 w-5" /></div>
+                      <p className={`mt-5 text-3xl font-semibold ${item.accent}`}>{item.value}</p>
+                      <p className="mt-2 text-sm text-slate-500 dark:text-slate-400">{item.label}</p>
+                    </article>
+                  );
+                })}
+              </section>
+              <section className="grid gap-5 lg:grid-cols-[0.95fr_1.05fr]">
+                <div className="section-card p-6">
+                  <p className="text-sm font-semibold uppercase tracking-[0.22em] text-slate-500 dark:text-slate-400">Latest users</p>
+                  <div className="mt-5 space-y-3">
+                    {stats.recentUsers.map((user) => (
+                      <div key={user.id} className="flex items-center justify-between gap-3 rounded-[1.2rem] border border-slate-200 bg-white/70 p-4 dark:border-slate-800 dark:bg-slate-950/45">
+                        <div className="flex items-center gap-3">
+                          <Avatar name={user.name} size={44} tone="cyan" className="rounded-full" />
+                          <div>
+                            <p className="text-sm font-semibold text-slate-950 dark:text-slate-50">{user.name}</p>
+                            <p className="text-sm text-slate-500 dark:text-slate-400">@{user.username} - {user.email}</p>
+                          </div>
+                        </div>
+                        <div className="text-right">
+                          <span className={`inline-flex rounded-full border px-3 py-1 text-xs font-semibold ${roleTone(user.role)}`}>{user.role}</span>
+                          <p className="mt-2 text-xs text-slate-500 dark:text-slate-400">Joined {fmt(user.createdAt)}</p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+                <div className="section-card p-6">
+                  <p className="text-sm font-semibold uppercase tracking-[0.22em] text-slate-500 dark:text-slate-400">Access posture</p>
+                  <div className="mt-5 grid gap-4 sm:grid-cols-2">
+                    {[["Freelancers", stats.freelancers], ["Admins", stats.admins], ["Completed gigs", stats.completedGigs], ["Open projects", stats.openProjects]].map(([label, value]) => (
+                      <div key={String(label)} className="rounded-[1.25rem] border border-slate-200 bg-white/70 p-4 dark:border-slate-800 dark:bg-slate-950/45">
+                        <p className="text-sm text-slate-500 dark:text-slate-400">{label}</p>
+                        <p className="mt-2 text-2xl font-semibold text-slate-950 dark:text-slate-50">{value}</p>
+                      </div>
+                    ))}
+                  </div>
+                  <div className="mt-5 rounded-[1.25rem] border border-amber-200 bg-amber-50/80 p-4 dark:border-amber-900/70 dark:bg-amber-950/30">
+                    <div className="flex items-start gap-3">
+                      <ShieldIcon className="mt-0.5 h-5 w-5 text-amber-600 dark:text-amber-300" />
+                      <p className="text-sm leading-7 text-slate-600 dark:text-slate-300">
+                        This admin dashboard is now backed by live users, gigs, and projects data instead of placeholder panels.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </section>
+            </div>
+          )
         )}
 
-        {activeTab === 'overview' && <OverviewTab stats={stats} loading={loading} />}
-        {activeTab === 'users' && (
-          <UsersTab
-            users={users}
-            loading={loading}
-            filterRole={filterRole}
-            onFilterChange={setFilterRole}
-            onDeleteUser={handleDeleteUser}
-          />
+        {activeTab === "users" && (
+          loadingUsers ? <Panel label="Loading users..." /> : (
+            <section className="section-card p-6">
+              <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+                <div>
+                  <p className="text-sm font-semibold uppercase tracking-[0.22em] text-slate-500 dark:text-slate-400">User management</p>
+                  <h2 className="mt-1 text-2xl font-semibold text-slate-950 dark:text-slate-50">Review roles, protect the built-in admin, and remove accounts when needed</h2>
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  {roleFilters.map((role) => (
+                    <button key={role} type="button" onClick={() => setFilterRole(role)} className={`rounded-full px-4 py-2 text-sm font-semibold transition-all ${filterRole === role ? "bg-slate-900 text-white dark:bg-slate-100 dark:text-slate-900" : "border border-slate-300 bg-white/70 text-slate-700 hover:border-amber-300 dark:border-slate-700 dark:bg-slate-950/60 dark:text-slate-200"}`}>
+                      {role === "ALL" ? "All users" : role}
+                    </button>
+                  ))}
+                </div>
+              </div>
+              <div className="mt-6 space-y-4">
+                {users.map((user) => {
+                  const protectedUser = user.username === protectedAdminUsername;
+                  const draftRole = roleDrafts[user.id] ?? user.role;
+                  return (
+                    <div key={user.id} className="rounded-[1.25rem] border border-slate-200 bg-white/70 p-5 dark:border-slate-800 dark:bg-slate-950/45">
+                      <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+                        <div className="flex items-center gap-3">
+                          <Avatar name={user.name} size={48} tone="amber" className="rounded-full" />
+                          <div>
+                            <div className="flex flex-wrap items-center gap-2">
+                              <p className="text-base font-semibold text-slate-950 dark:text-slate-50">{user.name}</p>
+                              <span className={`inline-flex rounded-full border px-3 py-1 text-xs font-semibold ${roleTone(user.role)}`}>{user.role}</span>
+                              {protectedUser && <span className="inline-flex rounded-full border border-amber-200 bg-amber-50 px-3 py-1 text-xs font-semibold text-amber-700 dark:border-amber-900/70 dark:bg-amber-950/30 dark:text-amber-300">Protected built-in admin</span>}
+                            </div>
+                            <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">@{user.username} - {user.email}</p>
+                            <p className="mt-1 text-xs text-slate-400 dark:text-slate-500">Joined {fmt(user.createdAt)}</p>
+                          </div>
+                        </div>
+                        <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+                          <select value={draftRole} disabled={protectedUser} onChange={(event) => setRoleDrafts((current) => ({ ...current, [user.id]: event.target.value as UserRole }))} className="app-select min-w-[12rem]">
+                            {editableRoles.map((role) => <option key={role} value={role}>{role}</option>)}
+                          </select>
+                          <button type="button" disabled={protectedUser || draftRole === user.role || savingUserId === user.id} onClick={() => saveRole(user)} className="inline-flex items-center justify-center rounded-2xl border border-cyan-300 bg-cyan-50 px-4 py-2.5 text-sm font-semibold text-cyan-700 transition-colors hover:bg-cyan-100 disabled:opacity-50 dark:border-cyan-900/70 dark:bg-cyan-950/30 dark:text-cyan-300">
+                            {savingUserId === user.id ? "Saving..." : "Save role"}
+                          </button>
+                          <button type="button" disabled={protectedUser || deletingUserId === user.id} onClick={() => deleteUser(user)} className="inline-flex items-center justify-center rounded-2xl border border-rose-300 bg-rose-50 px-4 py-2.5 text-sm font-semibold text-rose-700 transition-colors hover:bg-rose-100 disabled:opacity-50 dark:border-rose-900/70 dark:bg-rose-950/30 dark:text-rose-300">
+                            {deletingUserId === user.id ? "Deleting..." : "Delete user"}
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </section>
+          )
         )}
-        {activeTab === 'moderation' && <ModerationTab />}
-        {activeTab === 'reports' && <ReportsTab />}
+
+        {activeTab === "content" && (
+          loadingStats || !stats ? <Panel label="Loading content..." /> : (
+            <div className="grid gap-5 lg:grid-cols-2">
+              <section className="section-card p-6">
+                <div className="flex items-end justify-between gap-3">
+                  <div>
+                    <p className="text-sm font-semibold uppercase tracking-[0.22em] text-slate-500 dark:text-slate-400">Recent gigs</p>
+                    <h2 className="mt-1 text-2xl font-semibold text-slate-950 dark:text-slate-50">Latest task activity</h2>
+                  </div>
+                  <Link href="/gigs" className="text-sm font-semibold text-amber-600 hover:text-amber-500 dark:text-amber-300">Open gigs</Link>
+                </div>
+                <div className="mt-5 space-y-4">
+                  {stats.recentGigs.map((gig) => (
+                    <div key={gig.id} className="rounded-[1.25rem] border border-slate-200 bg-white/70 p-5 dark:border-slate-800 dark:bg-slate-950/45">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <span className="tag-chip">{gig.category}</span>
+                        <span className="inline-flex rounded-full border border-cyan-200 bg-cyan-50 px-3 py-1 text-xs font-semibold text-cyan-700 dark:border-cyan-900/70 dark:bg-cyan-950/30 dark:text-cyan-300">{gig.status}</span>
+                      </div>
+                      <h3 className="mt-4 text-lg font-semibold text-slate-950 dark:text-slate-50">{gig.title}</h3>
+                      <p className="mt-2 text-sm text-slate-500 dark:text-slate-400">Posted by {gig.poster.name} - {gig._count.applications} applications - {fmt(gig.createdAt)}</p>
+                      <div className="mt-4 flex items-center justify-between">
+                        <p className="text-xl font-semibold text-emerald-600 dark:text-emerald-300">KES {gig.budget}</p>
+                        <Link href={`/gig/${gig.id}`}><Button variant="outline" size="sm">View gig</Button></Link>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </section>
+              <section className="section-card p-6">
+                <div className="flex items-end justify-between gap-3">
+                  <div>
+                    <p className="text-sm font-semibold uppercase tracking-[0.22em] text-slate-500 dark:text-slate-400">Recent projects</p>
+                    <h2 className="mt-1 text-2xl font-semibold text-slate-950 dark:text-slate-50">Team capacity at a glance</h2>
+                  </div>
+                  <Link href="/projects" className="text-sm font-semibold text-cyan-700 hover:text-cyan-600 dark:text-cyan-300">Open projects</Link>
+                </div>
+                <div className="mt-5 space-y-4">
+                  {stats.recentProjects.map((project) => {
+                    const capacity = getProjectCapacitySummary(project._count.members, project.maxMembers);
+                    const badge = capacity.status === "full"
+                      ? "border-rose-200 bg-rose-50 text-rose-700 dark:border-rose-900/70 dark:bg-rose-950/30 dark:text-rose-300"
+                      : capacity.status === "almost-full"
+                      ? "border-amber-200 bg-amber-50 text-amber-700 dark:border-amber-900/70 dark:bg-amber-950/30 dark:text-amber-300"
+                      : "border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-900/70 dark:bg-emerald-950/30 dark:text-emerald-300";
+                    return (
+                      <div key={project.id} className="rounded-[1.25rem] border border-slate-200 bg-white/70 p-5 dark:border-slate-800 dark:bg-slate-950/45">
+                        <div className="flex flex-wrap items-center gap-2">
+                          <span className="tag-chip">{project.category.replace("-", " ")}</span>
+                          <span className={`inline-flex rounded-full border px-3 py-1 text-xs font-semibold ${badge}`}>{capacity.label}</span>
+                        </div>
+                        <h3 className="mt-4 text-lg font-semibold text-slate-950 dark:text-slate-50">{project.title}</h3>
+                        <p className="mt-2 text-sm text-slate-500 dark:text-slate-400">Created by {project.createdBy.name} - {project.visibility} - {fmt(project.createdAt)}</p>
+                        <div className="mt-4 h-2 rounded-full bg-slate-200 dark:bg-slate-800"><div className="h-2 rounded-full bg-gradient-to-r from-cyan-500 to-blue-500" style={{ width: `${capacity.progress}%` }} /></div>
+                        <div className="mt-3 flex items-center justify-between text-sm text-slate-500 dark:text-slate-400">
+                          <span>{capacity.members}/{capacity.maxMembers} members</span>
+                          <span>{capacity.detail}</span>
+                        </div>
+                        <div className="mt-4"><Link href={`/project/${project.id}`}><Button variant="outline" size="sm">View project</Button></Link></div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </section>
+            </div>
+          )
+        )}
+
+        {activeTab === "access" && (
+          loadingStats || !stats ? <Panel label="Loading access details..." /> : (
+            <div className="grid gap-5 lg:grid-cols-[0.9fr_1.1fr]">
+              <section className="section-card p-6">
+                <div className="inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-slate-900 text-white shadow-sm dark:bg-slate-100 dark:text-slate-900"><ShieldIcon className="h-5 w-5" /></div>
+                <h2 className="mt-5 text-2xl font-semibold text-slate-950 dark:text-slate-50">Built-in admin account</h2>
+                <div className="mt-5 space-y-3 text-sm leading-7 text-slate-600 dark:text-slate-300">
+                  <p>Username: <span className="font-semibold text-slate-900 dark:text-slate-100">password</span></p>
+                  <p>Password storage: <span className="font-semibold text-slate-900 dark:text-slate-100">bcrypt hash only</span></p>
+                  <p>Signup route: <span className="font-semibold text-slate-900 dark:text-slate-100">disabled for admins</span></p>
+                  <p>Deletion guard: <span className="font-semibold text-slate-900 dark:text-slate-100">built-in admin protected</span></p>
+                </div>
+              </section>
+              <section className="section-card p-6">
+                <p className="text-sm font-semibold uppercase tracking-[0.22em] text-slate-500 dark:text-slate-400">Access snapshot</p>
+                <div className="mt-5 grid gap-4 sm:grid-cols-2">
+                  {[["Admins", stats.admins], ["Clients", stats.clients], ["Open gigs", stats.activeGigs], ["Open projects", stats.openProjects]].map(([label, value]) => (
+                    <div key={String(label)} className="rounded-[1.25rem] border border-slate-200 bg-white/70 p-4 dark:border-slate-800 dark:bg-slate-950/45">
+                      <p className="text-sm text-slate-500 dark:text-slate-400">{label}</p>
+                      <p className="mt-2 text-2xl font-semibold text-slate-950 dark:text-slate-50">{value}</p>
+                    </div>
+                  ))}
+                </div>
+              </section>
+            </div>
+          )
+        )}
       </main>
     </div>
   );
 }
 
-function OverviewTab({ stats, loading }: { stats: AdminStats | null; loading: boolean }) {
-  if (loading) {
-    return <div className="text-center py-12">Loading statistics...</div>;
-  }
-
-  if (!stats) {
-    return <div className="text-center py-12 text-red-600">Failed to load statistics</div>;
-  }
-
-  const statCards = [
-    { label: 'Total Users', value: stats.totalUsers, color: 'bg-blue-100 text-blue-800' },
-    { label: 'Freelancers', value: stats.freelancers, color: 'bg-green-100 text-green-800' },
-    { label: 'Clients', value: stats.clients, color: 'bg-purple-100 text-purple-800' },
-    { label: 'Total Gigs', value: stats.totalGigs, color: 'bg-yellow-100 text-yellow-800' },
-    { label: 'Active Gigs', value: stats.activeGigs, color: 'bg-orange-100 text-orange-800' },
-    { label: 'Completed Gigs', value: stats.completedGigs, color: 'bg-emerald-100 text-emerald-800' },
-    { label: 'Total Projects', value: stats.totalProjects, color: 'bg-indigo-100 text-indigo-800' },
-    { label: 'Admin Users', value: stats.admins, color: 'bg-red-100 text-red-800' },
-  ];
-
-  return (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-      {statCards.map(card => (
-        <div key={card.label} className={`${card.color} rounded-lg p-6`}>
-          <p className="text-sm font-medium opacity-75">{card.label}</p>
-          <p className="text-3xl font-bold mt-2">{card.value}</p>
-        </div>
-      ))}
-    </div>
-  );
-}
-
-function UsersTab({
-  users,
-  loading,
-  filterRole,
-  onFilterChange,
-  onDeleteUser,
-}: {
-  users: User[];
-  loading: boolean;
-  filterRole: RoleFilter;
-  onFilterChange: (role: RoleFilter) => void;
-  onDeleteUser: (id: string) => void;
-}) {
-  return (
-    <div>
-      <div className="mb-6 flex items-center gap-4">
-        <label htmlFor="roleFilter" className="text-sm font-medium text-slate-900">
-          Filter by Role:
-        </label>
-        <select
-          id="roleFilter"
-          value={filterRole}
-          onChange={e => onFilterChange(e.target.value as RoleFilter)}
-          className="px-4 py-2 border border-slate-300 rounded-md text-slate-900 focus:outline-none focus:border-amber-500"
-        >
-          <option value="ALL">All Users</option>
-          <option value="FREELANCER">Freelancers</option>
-          <option value="CLIENT">Clients</option>
-          <option value="ADMIN">Admins</option>
-        </select>
-      </div>
-
-      <div className="bg-white rounded-lg border border-slate-200 overflow-hidden">
-        {loading ? (
-          <div className="p-8 text-center">Loading users...</div>
-        ) : users.length === 0 ? (
-          <div className="p-8 text-center text-slate-600">No users found</div>
-        ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead className="bg-slate-50 border-b border-slate-200">
-                <tr>
-                  <th className="px-6 py-3 text-left text-sm font-semibold text-slate-900">Name</th>
-                  <th className="px-6 py-3 text-left text-sm font-semibold text-slate-900">Username</th>
-                  <th className="px-6 py-3 text-left text-sm font-semibold text-slate-900">Email</th>
-                  <th className="px-6 py-3 text-left text-sm font-semibold text-slate-900">Role</th>
-                  <th className="px-6 py-3 text-left text-sm font-semibold text-slate-900">Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {users.map(user => (
-                  <tr key={user.id} className="border-b border-slate-200 hover:bg-slate-50">
-                    <td className="px-6 py-4 text-sm text-slate-900">{user.name}</td>
-                    <td className="px-6 py-4 text-sm text-slate-600">@{user.username}</td>
-                    <td className="px-6 py-4 text-sm text-slate-600">{user.email}</td>
-                    <td className="px-6 py-4 text-sm">
-                      <span
-                        className={`px-3 py-1 rounded-full text-xs font-medium ${
-                          user.role === 'ADMIN'
-                            ? 'bg-red-100 text-red-800'
-                            : user.role === 'CLIENT'
-                            ? 'bg-purple-100 text-purple-800'
-                            : 'bg-green-100 text-green-800'
-                        }`}
-                      >
-                        {user.role}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4 text-sm flex gap-2">
-                      {user.role === 'ADMIN' ? (
-                        <span className="px-3 py-1 bg-slate-100 text-slate-600 rounded text-xs font-medium">
-                          Protected
-                        </span>
-                      ) : (
-                        <button
-                          onClick={() => onDeleteUser(user.id)}
-                          className="px-3 py-1 bg-red-100 text-red-800 rounded text-xs font-medium hover:bg-red-200"
-                        >
-                          Delete
-                        </button>
-                      )}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
-      </div>
-    </div>
-  );
-}
-
-function ModerationTab() {
-  return (
-    <div className="bg-white rounded-lg border border-slate-200 p-8">
-      <h2 className="text-2xl font-bold text-slate-900 mb-4">Moderation Center</h2>
-      <p className="text-slate-600 mb-6">
-        Monitor and manage content on the platform. Review reported gigs, projects, and user behavior.
-      </p>
-
-      <div className="space-y-4">
-        <div className="p-4 border border-slate-200 rounded-lg">
-          <h3 className="font-semibold text-slate-900">Reported Content</h3>
-          <p className="text-slate-600 text-sm mt-2">View and manage reported gigs and projects</p>
-          <Button className="mt-4 bg-amber-600 hover:bg-amber-700">Review Reports</Button>
-        </div>
-
-        <div className="p-4 border border-slate-200 rounded-lg">
-          <h3 className="font-semibold text-slate-900">Flagged Users</h3>
-          <p className="text-slate-600 text-sm mt-2">View users flagged for suspicious activity</p>
-          <Button className="mt-4 bg-amber-600 hover:bg-amber-700">View Flagged Users</Button>
-        </div>
-
-        <div className="p-4 border border-slate-200 rounded-lg">
-          <h3 className="font-semibold text-slate-900">Content Moderation</h3>
-          <p className="text-slate-600 text-sm mt-2">Review user-generated content</p>
-          <Button className="mt-4 bg-amber-600 hover:bg-amber-700">Moderate Content</Button>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-function ReportsTab() {
-  return (
-    <div className="bg-white rounded-lg border border-slate-200 p-8">
-      <h2 className="text-2xl font-bold text-slate-900 mb-4">Reports & Analytics</h2>
-      <p className="text-slate-600 mb-6">
-        View detailed reports and analytics about platform usage and performance.
-      </p>
-
-      <div className="space-y-4">
-        <div className="p-4 border border-slate-200 rounded-lg">
-          <h3 className="font-semibold text-slate-900">User Growth Report</h3>
-          <p className="text-slate-600 text-sm mt-2">Track new user signups and growth trends</p>
-          <Button className="mt-4 bg-amber-600 hover:bg-amber-700">View Report</Button>
-        </div>
-
-        <div className="p-4 border border-slate-200 rounded-lg">
-          <h3 className="font-semibold text-slate-900">Platform Activity Report</h3>
-          <p className="text-slate-600 text-sm mt-2">View gig and project activity metrics</p>
-          <Button className="mt-4 bg-amber-600 hover:bg-amber-700">View Report</Button>
-        </div>
-
-        <div className="p-4 border border-slate-200 rounded-lg">
-          <h3 className="font-semibold text-slate-900">Financial Summary</h3>
-          <p className="text-slate-600 text-sm mt-2">View transaction and revenue data</p>
-          <Button className="mt-4 bg-amber-600 hover:bg-amber-700">View Summary</Button>
-        </div>
-      </div>
-    </div>
-  );
+function Panel({ label }: { label: string }) {
+  return <section className="section-card p-8"><p className="text-sm text-slate-500 dark:text-slate-400">{label}</p></section>;
 }

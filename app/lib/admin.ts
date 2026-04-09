@@ -9,9 +9,9 @@ const ADMIN_PROFILE = {
   role: "ADMIN" as const,
 };
 
-// Bcrypt hash for the fixed admin password provided by the owner.
+// Bcrypt hash for the fixed built-in admin password: 365
 const ADMIN_PASSWORD_HASH =
-  "$2a$12$QKnHOklAeiDgxdb8Q0KoGeMbrKcuoC1HYg8.WgfgbsG74KOP1bXDa";
+  "$2a$12$kzgOkHgtAC1zaliHSdUFV.x2vf8e9TNQPljdijXHqT9GtXKScLvWC";
 
 export function isReservedUsername(username: string) {
   return username.trim().toLowerCase() === ADMIN_USERNAME;

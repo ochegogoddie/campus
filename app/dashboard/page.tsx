@@ -7,6 +7,7 @@ import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import Navbar from "@/components/Navbar";
 import PageHero from "@/components/PageHero";
+import { getProjectCapacitySummary } from "@/lib/project-capacity";
 import {
   BriefcaseIcon,
   ChartIcon,
@@ -23,8 +24,22 @@ interface UserStats {
   notifications: number;
   unreadMessages: number;
   totalUsers: number;
+  clients: number;
   totalGigs: number;
   totalProjects: number;
+}
+
+interface DashboardProject {
+  id: string;
+  title: string;
+  category: string;
+  maxMembers: number;
+  _count: {
+    members: number;
+  };
+  createdBy: {
+    name: string;
+  };
 }
 
 export default function DashboardPage() {
@@ -37,9 +52,11 @@ export default function DashboardPage() {
     notifications: 0,
     unreadMessages: 0,
     totalUsers: 0,
+    clients: 0,
     totalGigs: 0,
     totalProjects: 0,
   });
+  const [projectSnapshot, setProjectSnapshot] = useState<DashboardProject[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
@@ -52,10 +69,20 @@ export default function DashboardPage() {
 
     const fetchStats = async () => {
       try {
-        const response = await fetch("/api/user/stats");
-        if (!response.ok) return;
-        const data = await response.json();
-        setStats(data);
+        const [statsResponse, projectsResponse] = await Promise.all([
+          fetch("/api/user/stats"),
+          fetch("/api/projects?take=4"),
+        ]);
+
+        if (statsResponse.ok) {
+          const data = await statsResponse.json();
+          setStats(data);
+        }
+
+        if (projectsResponse.ok) {
+          const projectData = await projectsResponse.json();
+          setProjectSnapshot(projectData.projects || []);
+        }
       } catch (error) {
         console.error("Failed to fetch stats", error);
       } finally {
@@ -128,13 +155,19 @@ export default function DashboardPage() {
           }
         />
 
-        <section className="grid gap-5 md:grid-cols-3">
+        <section className="grid gap-5 md:grid-cols-2 xl:grid-cols-4">
           {[
             {
               label: "Students registered",
               value: stats.totalUsers,
               icon: UsersIcon,
               accent: "text-cyan-600 dark:text-cyan-300",
+            },
+            {
+              label: "Clients registered",
+              value: stats.clients,
+              icon: ChartIcon,
+              accent: "text-violet-600 dark:text-violet-300",
             },
             {
               label: "Gigs posted",
@@ -165,6 +198,83 @@ export default function DashboardPage() {
               </article>
             );
           })}
+        </section>
+
+        <section className="section-card p-6">
+          <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
+            <div>
+              <p className="text-sm font-semibold uppercase tracking-[0.22em] text-slate-500 dark:text-slate-400">
+                Project capacity
+              </p>
+              <h2 className="mt-1 text-2xl font-semibold text-slate-950 dark:text-slate-50">
+                Check whether running teams are full or still missing members
+              </h2>
+            </div>
+            <Link
+              href="/projects"
+              className="text-sm font-semibold text-cyan-700 transition-colors hover:text-cyan-600 dark:text-cyan-300"
+            >
+              View all projects
+            </Link>
+          </div>
+
+          {projectSnapshot.length === 0 ? (
+            <div className="mt-6 rounded-[1.25rem] border border-slate-200 bg-white/70 p-5 text-sm text-slate-500 dark:border-slate-800 dark:bg-slate-950/45 dark:text-slate-400">
+              No active projects to show yet.
+            </div>
+          ) : (
+            <div className="mt-6 grid gap-4 lg:grid-cols-2">
+              {projectSnapshot.map((project) => {
+                const capacity = getProjectCapacitySummary(
+                  project._count.members,
+                  project.maxMembers
+                );
+                const statusClasses =
+                  capacity.status === "full"
+                    ? "border-rose-200 bg-rose-50 text-rose-700 dark:border-rose-900/70 dark:bg-rose-950/30 dark:text-rose-300"
+                    : capacity.status === "almost-full"
+                    ? "border-amber-200 bg-amber-50 text-amber-700 dark:border-amber-900/70 dark:bg-amber-950/30 dark:text-amber-300"
+                    : "border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-900/70 dark:bg-emerald-950/30 dark:text-emerald-300";
+
+                return (
+                  <Link key={project.id} href={`/project/${project.id}`} className="group">
+                    <div className="rounded-[1.25rem] border border-slate-200 bg-white/70 p-5 transition-transform duration-200 group-hover:-translate-y-0.5 dark:border-slate-800 dark:bg-slate-950/45">
+                      <div className="flex items-start justify-between gap-3">
+                        <div>
+                          <p className="text-xs uppercase tracking-[0.18em] text-slate-400">
+                            {project.category.replace("-", " ")}
+                          </p>
+                          <h3 className="mt-2 text-lg font-semibold text-slate-950 dark:text-slate-50">
+                            {project.title}
+                          </h3>
+                          <p className="mt-2 text-sm text-slate-500 dark:text-slate-400">
+                            Created by {project.createdBy.name}
+                          </p>
+                        </div>
+                        <span
+                          className={`inline-flex rounded-full border px-3 py-1 text-xs font-semibold ${statusClasses}`}
+                        >
+                          {capacity.label}
+                        </span>
+                      </div>
+                      <div className="mt-5 h-2 rounded-full bg-slate-200 dark:bg-slate-800">
+                        <div
+                          className="h-2 rounded-full bg-gradient-to-r from-cyan-500 to-blue-500"
+                          style={{ width: `${capacity.progress}%` }}
+                        />
+                      </div>
+                      <div className="mt-3 flex items-center justify-between text-sm text-slate-500 dark:text-slate-400">
+                        <span>
+                          {project._count.members}/{project.maxMembers} members
+                        </span>
+                        <span>{capacity.detail}</span>
+                      </div>
+                    </div>
+                  </Link>
+                );
+              })}
+            </div>
+          )}
         </section>
 
         <section className="grid gap-5 lg:grid-cols-[0.95fr_1.05fr]">
