@@ -3,6 +3,7 @@ import type { Prisma, User } from "@prisma/client";
 
 export const ADMIN_USERNAME = "password";
 export const ADMIN_PASSWORD = "365";
+const ADMIN_VERIFIED_AT = new Date("2026-01-01T00:00:00.000Z");
 const ADMIN_PROFILE = {
   username: ADMIN_USERNAME,
   name: "Platform Admin",
@@ -28,6 +29,7 @@ export async function ensureAdminUser() {
       data: {
         ...ADMIN_PROFILE,
         password: ADMIN_PASSWORD_HASH,
+        emailVerifiedAt: ADMIN_VERIFIED_AT,
       },
     });
   }
@@ -38,6 +40,7 @@ export async function ensureAdminUser() {
   if (existingAdmin.email !== ADMIN_PROFILE.email) updates.email = ADMIN_PROFILE.email;
   if (existingAdmin.role !== ADMIN_PROFILE.role) updates.role = ADMIN_PROFILE.role;
   if (existingAdmin.password !== ADMIN_PASSWORD_HASH) updates.password = ADMIN_PASSWORD_HASH;
+  if (!existingAdmin.emailVerifiedAt) updates.emailVerifiedAt = ADMIN_VERIFIED_AT;
 
   if (Object.keys(updates).length === 0) {
     return existingAdmin;

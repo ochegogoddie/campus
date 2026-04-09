@@ -3,6 +3,15 @@ import { getServerSession } from "next-auth/next";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 
+async function canUseMessaging(userId: string) {
+  const user = await prisma.user.findUnique({
+    where: { id: userId },
+    select: { lockedUntil: true },
+  });
+
+  return !user?.lockedUntil || user.lockedUntil <= new Date();
+}
+
 // GET /api/messages/[recipientId] — get full conversation thread with a user
 export async function GET(
   request: NextRequest,
@@ -16,6 +25,13 @@ export async function GET(
 
     const { recipientId } = await params;
     const userId = session.user.id;
+
+    if (!(await canUseMessaging(userId))) {
+      return NextResponse.json(
+        { error: "This account is temporarily locked." },
+        { status: 423 }
+      );
+    }
 
     const messages = await prisma.message.findMany({
       where: {

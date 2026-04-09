@@ -19,6 +19,7 @@ export default function FreelancerSignupPage() {
   const [formData, setFormData] = useState({
     name: "",
     username: "",
+    email: "",
     phone: "",
     password: "",
     confirmPassword: "",
@@ -65,6 +66,7 @@ export default function FreelancerSignupPage() {
         body: JSON.stringify({
           name: formData.name,
           username: formData.username,
+          email: formData.email,
           phone: formData.phone || null,
           password: formData.password,
           role: "FREELANCER",
@@ -76,7 +78,7 @@ export default function FreelancerSignupPage() {
         throw new Error(data.error || "Signup failed");
       }
 
-      router.push("/login?registered=true");
+      router.push(`/verify-account?email=${encodeURIComponent(formData.email.trim().toLowerCase())}`);
     } catch (signupError) {
       setError(signupError instanceof Error ? signupError.message : "An error occurred");
     } finally {
@@ -173,6 +175,25 @@ export default function FreelancerSignupPage() {
                 />
                 <p className="mt-2 text-xs text-slate-500 dark:text-slate-400">
                   Use 3+ characters with letters, numbers, underscores, or hyphens.
+                </p>
+              </div>
+
+              <div>
+                <label className="mb-2 block text-sm font-semibold text-slate-800 dark:text-slate-200">
+                  Email address
+                </label>
+                <input
+                  id="email"
+                  name="email"
+                  type="email"
+                  required
+                  value={formData.email}
+                  onChange={handleChange}
+                  className="app-input"
+                  placeholder="you@example.com"
+                />
+                <p className="mt-2 text-xs text-slate-500 dark:text-slate-400">
+                  We will send a verification code here before the account becomes active.
                 </p>
               </div>
 

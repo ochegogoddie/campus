@@ -11,6 +11,15 @@ const messageSchema = z.object({
   projectId: z.string().optional(),
 });
 
+async function canUseMessaging(userId: string) {
+  const user = await prisma.user.findUnique({
+    where: { id: userId },
+    select: { lockedUntil: true },
+  });
+
+  return !user?.lockedUntil || user.lockedUntil <= new Date();
+}
+
 // GET /api/messages — list all conversations (unique partners) for the current user
 export async function GET() {
   try {
@@ -20,6 +29,13 @@ export async function GET() {
     }
 
     const userId = session.user.id;
+
+    if (!(await canUseMessaging(userId))) {
+      return NextResponse.json(
+        { error: "This account is temporarily locked." },
+        { status: 423 }
+      );
+    }
 
     // Get all direct messages where user is sender or recipient
     const messages = await prisma.message.findMany({
@@ -81,6 +97,13 @@ export async function POST(request: NextRequest) {
     const session = await getServerSession(authOptions);
     if (!session?.user) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    if (!(await canUseMessaging(session.user.id))) {
+      return NextResponse.json(
+        { error: "This account is temporarily locked." },
+        { status: 423 }
+      );
     }
 
     const body = await request.json();

@@ -2,8 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth/next";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { isBuiltInAdmin } from "@/lib/admin";
-import type { Prisma } from "@prisma/client";
+import { isBuiltInAdmin, isReservedUsername } from "@/lib/admin";
+import { Prisma } from "@prisma/client";
 import { z } from "zod";
 
 // Middleware to check if user is admin
@@ -14,8 +14,17 @@ async function isAdmin() {
 
 const updateUserSchema = z.object({
   role: z.enum(["FREELANCER", "CLIENT", "ADMIN"]).optional(),
-  name: z.string().optional(),
+  name: z.string().min(2).optional(),
+  username: z
+    .string()
+    .min(3, "Username must be at least 3 characters")
+    .regex(/^[a-zA-Z0-9_-]+$/, "Username can only contain letters, numbers, underscores, and hyphens")
+    .optional(),
+  email: z.string().email("Enter a valid email address").optional(),
+  phone: z.string().nullable().optional(),
+  emailVerified: z.boolean().optional(),
   bio: z.string().optional(),
+  lockedUntil: z.string().datetime().nullable().optional(),
 });
 
 export async function PATCH(
@@ -32,11 +41,11 @@ export async function PATCH(
     }
 
     const body = await request.json();
-    const { role, name, bio } = updateUserSchema.parse(body);
+    const { role, name, username, email, phone, emailVerified, bio, lockedUntil } = updateUserSchema.parse(body);
 
     const userToUpdate = await prisma.user.findUnique({
       where: { id },
-      select: { username: true },
+      select: { username: true, email: true },
     });
 
     if (isBuiltInAdmin(userToUpdate)) {
@@ -46,10 +55,39 @@ export async function PATCH(
       );
     }
 
+    const normalizedUsername = username?.trim();
+    const normalizedEmail = email?.trim().toLowerCase();
+    const normalizedPhone = phone?.trim() || null;
+
+    if (normalizedUsername && isReservedUsername(normalizedUsername)) {
+      return NextResponse.json(
+        { error: "This username is reserved and cannot be assigned." },
+        { status: 400 }
+      );
+    }
+
+    if (normalizedPhone && !/^\+?[0-9\s\-()]+$/.test(normalizedPhone)) {
+      return NextResponse.json(
+        { error: "Invalid phone number format" },
+        { status: 400 }
+      );
+    }
+
     const updateData: Prisma.UserUpdateInput = {};
     if (role) updateData.role = role;
     if (name) updateData.name = name;
+    if (normalizedUsername) updateData.username = normalizedUsername;
+    if (normalizedEmail) updateData.email = normalizedEmail;
+    if (phone !== undefined) updateData.phone = normalizedPhone;
     if (bio) updateData.bio = bio;
+    if (lockedUntil !== undefined) {
+      updateData.lockedUntil = lockedUntil ? new Date(lockedUntil) : null;
+    }
+    if (emailVerified !== undefined) {
+      updateData.emailVerifiedAt = emailVerified ? new Date() : null;
+    } else if (normalizedEmail && normalizedEmail !== userToUpdate?.email) {
+      updateData.emailVerifiedAt = null;
+    }
 
     const user = await prisma.user.update({
       where: { id },
@@ -60,6 +98,9 @@ export async function PATCH(
         name: true,
         role: true,
         email: true,
+        phone: true,
+        emailVerifiedAt: true,
+        lockedUntil: true,
       },
     });
 
@@ -68,6 +109,17 @@ export async function PATCH(
     if (error instanceof z.ZodError) {
       return NextResponse.json(
         { error: error.errors[0].message },
+        { status: 400 }
+      );
+    }
+
+    if (
+      error instanceof Prisma.PrismaClientKnownRequestError &&
+      error.code === "P2002"
+    ) {
+      const field = (error.meta?.target as string[] | undefined)?.[0] || "field";
+      return NextResponse.json(
+        { error: `This ${field} is already in use. Please choose another one.` },
         { status: 400 }
       );
     }

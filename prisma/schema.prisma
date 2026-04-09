@@ -12,9 +12,11 @@ model User {
   username     String   @unique
   phone        String?  @unique
   email        String   @unique
+  emailVerifiedAt DateTime?
   name         String
   password     String
   role         String   @default("FREELANCER")  // FREELANCER, CLIENT, ADMIN
+  lockedUntil  DateTime?
   bio          String?
   avatar       String?
   skills       String   @default("[]")
@@ -40,8 +42,26 @@ model User {
   projectDiscussions   ProjectDiscussion[]
   discussionReplies    DiscussionReply[]
   uploadedFiles        ProjectFile[]
+  authCodes            AuthCode[]
 
   @@index([email])
+}
+
+model AuthCode {
+  id         String   @id @default(cuid())
+  email      String
+  purpose    String
+  codeHash   String
+  expiresAt  DateTime
+  consumedAt DateTime?
+  createdAt  DateTime @default(now())
+
+  userId String?
+  user   User? @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([email, purpose])
+  @@index([userId, purpose])
+  @@index([expiresAt])
 }
 
 model Gig {
