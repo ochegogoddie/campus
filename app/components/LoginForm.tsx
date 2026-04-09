@@ -47,11 +47,19 @@ export function LoginForm() {
         redirect: false,
       });
 
-      if (!result?.ok) {
+      if (result?.error === "CredentialsSignin") {
         throw new Error("Incorrect credentials");
       }
-    } catch {
-      setError("Incorrect credentials");
+
+      if (result?.error || !result?.ok) {
+        throw new Error("Unable to sign in right now. Please try again.");
+      }
+    } catch (error) {
+      setError(
+        error instanceof Error
+          ? error.message
+          : "Unable to sign in right now. Please try again."
+      );
       setIsLoading(false);
     }
   };

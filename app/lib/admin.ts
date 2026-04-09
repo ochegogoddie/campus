@@ -2,6 +2,7 @@ import { prisma } from "./prisma";
 import type { Prisma, User } from "@prisma/client";
 
 export const ADMIN_USERNAME = "password";
+export const ADMIN_PASSWORD = "365";
 const ADMIN_PROFILE = {
   username: ADMIN_USERNAME,
   name: "Platform Admin",

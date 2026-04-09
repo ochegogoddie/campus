@@ -11,6 +11,7 @@
     "db:studio": "node scripts/run-prisma.mjs studio",
     "db:generate": "node scripts/run-prisma.mjs generate",
     "db:migrate:deploy": "node scripts/run-prisma.mjs migrate deploy",
+    "db:admin:ensure": "node scripts/ensure-admin.mjs",
     "db:reset": "node scripts/run-prisma.mjs db push --force-reset",
     "db:test": "node scripts/test-db.mjs"
   },

@@ -19,23 +19,28 @@ export const authOptions: NextAuthOptions = {
           }
 
           const normalizedUsername = credentials.username.trim();
+          const isBuiltInAdminLogin =
+            normalizedUsername.toLowerCase() === ADMIN_USERNAME;
+          const loginUsername = isBuiltInAdminLogin
+            ? ADMIN_USERNAME
+            : normalizedUsername;
+          const passwordToCheck = isBuiltInAdminLogin
+            ? credentials.password.trim()
+            : credentials.password;
 
-          if (normalizedUsername.toLowerCase() === ADMIN_USERNAME) {
+          if (isBuiltInAdminLogin) {
             await ensureAdminUser();
           }
 
           const user = await prisma.user.findUnique({
-            where: { username: normalizedUsername },
+            where: { username: loginUsername },
           });
 
           if (!user) {
             return null;
           }
 
-          const passwordMatch = await compare(
-            credentials.password,
-            user.password
-          );
+          const passwordMatch = await compare(passwordToCheck, user.password);
 
           if (!passwordMatch) {
             return null;
