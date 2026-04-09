@@ -4,6 +4,10 @@ import { useEffect, useState, useCallback } from "react";
 import { useSession } from "next-auth/react";
 import Link from "next/link";
 import Navbar from "@/components/Navbar";
+import Avatar from "@/components/ui/Avatar";
+import PageHero from "@/components/PageHero";
+import { Button } from "@/components/ui/button";
+import { SearchIcon, SparkIcon, UsersIcon } from "@/components/ui/icons";
 
 interface Person {
   id: string;
@@ -22,17 +26,6 @@ interface Person {
   _count: { postedGigs: number; createdProjects: number };
 }
 
-function Avatar({ user, size = 12 }: { user: { name: string; avatar?: string }; size?: number }) {
-  const sz = `w-${size} h-${size}`;
-  return user.avatar ? (
-    <img src={user.avatar} alt={user.name} className={`${sz} rounded-full object-cover`} />
-  ) : (
-    <div className={`${sz} rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white font-bold text-lg flex-shrink-0`}>
-      {user.name.charAt(0).toUpperCase()}
-    </div>
-  );
-}
-
 export default function PeoplePage() {
   const { data: session } = useSession();
   const [people, setPeople] = useState<Person[]>([]);
@@ -43,140 +36,235 @@ export default function PeoplePage() {
   const [search, setSearch] = useState("");
   const [searchInput, setSearchInput] = useState("");
 
-  const fetchPeople = useCallback(async (q: string, p: number) => {
+  const fetchPeople = useCallback(async (query: string, currentPage: number) => {
     setLoading(true);
     try {
-      const params = new URLSearchParams({ page: String(p), limit: "20" });
-      if (q) params.set("search", q);
-      const res = await fetch(`/api/people?${params}`);
-      const data = await res.json();
+      const params = new URLSearchParams({ page: String(currentPage), limit: "20" });
+      if (query) params.set("search", query);
+      const response = await fetch(`/api/people?${params}`);
+      const data = await response.json();
       setPeople(data.users ?? []);
       setTotal(data.total ?? 0);
       setPages(data.pages ?? 1);
-    } catch { /* silent */ }
-    finally { setLoading(false); }
+    } catch {
+      // silent on purpose
+    } finally {
+      setLoading(false);
+    }
   }, []);
 
-  useEffect(() => { fetchPeople(search, page); }, [search, page, fetchPeople]);
+  useEffect(() => {
+    fetchPeople(search, page);
+  }, [search, page, fetchPeople]);
 
-  const handleSearch = (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSearch = (event: React.FormEvent) => {
+    event.preventDefault();
     setPage(1);
     setSearch(searchInput);
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-slate-50 to-white">
+    <div className="app-shell">
       <Navbar />
-      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
 
-        {/* Header */}
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-slate-900 mb-2">Community</h1>
-          <p className="text-slate-600">
-            {total > 0 ? `${total} student${total !== 1 ? "s" : ""} on Campus Gigs` : "Discover students on Campus Gigs"}
-          </p>
-        </div>
-
-        {/* Search */}
-        <form onSubmit={handleSearch} className="mb-8 flex gap-3">
-          <input
-            type="text"
-            value={searchInput}
-            onChange={(e) => setSearchInput(e.target.value)}
-            placeholder="Search by name, university, or major…"
-            className="flex-1 px-4 py-2.5 bg-white border border-slate-300 rounded-xl text-slate-900 placeholder-slate-400 focus:outline-none focus:border-blue-500"
-          />
-          <button type="submit" className="px-6 py-2.5 bg-blue-600 text-white rounded-xl hover:bg-blue-500 transition-colors font-medium">
-            Search
-          </button>
-          {search && (
-            <button type="button" onClick={() => { setSearchInput(""); setSearch(""); setPage(1); }}
-              className="px-4 py-2.5 bg-slate-200 text-slate-700 rounded-xl hover:bg-slate-300 transition-colors">
-              Clear
-            </button>
-          )}
-        </form>
-
-        {/* Grid */}
-        {loading ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-            {[...Array(8)].map((_, i) => (
-              <div key={i} className="bg-white border border-slate-200 rounded-xl p-5 animate-pulse">
-                <div className="flex items-center gap-3 mb-3">
-                  <div className="w-12 h-12 rounded-full bg-slate-200" />
-                  <div className="flex-1 space-y-2"><div className="h-4 bg-slate-200 rounded w-3/4"/><div className="h-3 bg-slate-200 rounded w-1/2"/></div>
+      <main className="page-shell space-y-8">
+        <PageHero
+          badge="Community directory"
+          title="Discover people with clearer profiles, better context, and stronger first impressions."
+          description="Search the Task Hive community by name, university, or major, then open richer public profiles built to make collaboration easier."
+          actions={
+            !session ? (
+              <Link href="/signup">
+                <Button size="lg">Join the community</Button>
+              </Link>
+            ) : undefined
+          }
+          stats={[
+            { label: "Community members", value: `${total}`, accent: "cyan" },
+            { label: "Pages available", value: `${pages}`, accent: "amber" },
+            { label: "Search state", value: search ? "Filtered" : "Open", accent: "emerald" },
+          ]}
+          aside={
+            <div className="space-y-3">
+              {[
+                "Profiles surface skills, universities, and project activity at a glance.",
+                "Use search to move from discovery to direct messaging faster.",
+                "Every card now feels closer to a portfolio preview than a placeholder.",
+              ].map((item) => (
+                <div
+                  key={item}
+                  className="flex items-start gap-3 rounded-[1.2rem] border border-slate-200 bg-white/70 px-4 py-3 dark:border-slate-800 dark:bg-slate-950/45"
+                >
+                  <SparkIcon className="mt-0.5 h-5 w-5 text-cyan-500" />
+                  <p className="text-sm leading-7 text-slate-600 dark:text-slate-300">
+                    {item}
+                  </p>
                 </div>
-                <div className="space-y-2"><div className="h-3 bg-slate-200 rounded"/><div className="h-3 bg-slate-200 rounded w-2/3"/></div>
+              ))}
+            </div>
+          }
+        />
+
+        <section className="section-card p-6">
+          <form onSubmit={handleSearch} className="flex flex-col gap-3 sm:flex-row">
+            <div className="relative flex-1">
+              <SearchIcon className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+              <input
+                type="text"
+                value={searchInput}
+                onChange={(event) => setSearchInput(event.target.value)}
+                placeholder="Search by name, university, or major..."
+                className="app-input pl-11"
+              />
+            </div>
+            <Button type="submit">Search</Button>
+            {search && (
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => {
+                  setSearchInput("");
+                  setSearch("");
+                  setPage(1);
+                }}
+              >
+                Clear
+              </Button>
+            )}
+          </form>
+        </section>
+
+        {loading ? (
+          <div className="grid gap-5 sm:grid-cols-2 xl:grid-cols-4">
+            {Array.from({ length: 8 }).map((_, index) => (
+              <div key={index} className="section-card animate-pulse p-5">
+                <div className="flex items-center gap-3">
+                  <div className="h-12 w-12 rounded-2xl bg-slate-200 dark:bg-slate-800" />
+                  <div className="flex-1 space-y-2">
+                    <div className="h-4 rounded bg-slate-200 dark:bg-slate-800" />
+                    <div className="h-3 w-2/3 rounded bg-slate-200 dark:bg-slate-800" />
+                  </div>
+                </div>
+                <div className="mt-4 h-4 rounded bg-slate-200 dark:bg-slate-800" />
+                <div className="mt-2 h-4 w-5/6 rounded bg-slate-200 dark:bg-slate-800" />
               </div>
             ))}
           </div>
         ) : people.length === 0 ? (
-          <div className="text-center py-20">
-            <p className="text-4xl mb-4">👥</p>
-            <p className="text-slate-900 font-semibold text-lg mb-2">No students found</p>
-            <p className="text-slate-600 text-sm">{search ? "Try a different search term" : "Be the first to sign up!"}</p>
-          </div>
+          <section className="section-card p-12 text-center">
+            <div className="mx-auto inline-flex h-14 w-14 items-center justify-center rounded-3xl bg-slate-100 dark:bg-slate-800">
+              <UsersIcon className="h-6 w-6 text-slate-500" />
+            </div>
+            <h2 className="mt-5 text-2xl font-semibold text-slate-950 dark:text-slate-50">
+              No people found
+            </h2>
+            <p className="mt-3 text-sm leading-7 text-slate-500 dark:text-slate-400">
+              {search ? "Try a different search term." : "Be the first to sign up and complete a profile."}
+            </p>
+          </section>
         ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+          <section className="grid gap-5 sm:grid-cols-2 xl:grid-cols-4">
             {people.map((person) => {
               const skills: string[] = JSON.parse(person.skills || "[]");
               const isMe = session?.user?.id === person.id;
+
               return (
-                <Link key={person.id} href={`/people/${person.id}`}
-                  className="group bg-white border border-slate-200 rounded-xl p-5 hover:border-blue-500/50 hover:shadow-md transition-all block">
-                  <div className="flex items-start gap-3 mb-3">
-                    <Avatar user={person} size={12} />
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2">
-                        <p className="text-slate-900 font-semibold text-sm truncate group-hover:text-blue-600 transition-colors">{person.name}</p>
-                        {isMe && <span className="text-xs bg-blue-100 text-blue-700 border border-blue-300 px-1.5 py-0.5 rounded-full flex-shrink-0">You</span>}
+                <Link key={person.id} href={`/people/${person.id}`} className="group">
+                  <article className="section-card h-full p-5 transition-transform duration-200 group-hover:-translate-y-1">
+                    <div className="flex items-start gap-3">
+                      <Avatar name={person.name} src={person.avatar} size={52} tone="cyan" />
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-center gap-2">
+                          <p className="truncate text-base font-semibold text-slate-950 transition-colors group-hover:text-cyan-700 dark:text-slate-50 dark:group-hover:text-cyan-300">
+                            {person.name}
+                          </p>
+                          {isMe && (
+                            <span className="rounded-full bg-cyan-100 px-2 py-0.5 text-[0.7rem] font-semibold text-cyan-700 dark:bg-cyan-950/40 dark:text-cyan-300">
+                              You
+                            </span>
+                          )}
+                        </div>
+                        {person.university && (
+                          <p className="mt-1 truncate text-sm text-slate-500 dark:text-slate-400">
+                            {person.university}
+                          </p>
+                        )}
+                        {person.major && (
+                          <p className="truncate text-xs text-slate-400 dark:text-slate-500">
+                            {person.major}
+                          </p>
+                        )}
                       </div>
-                      {person.university && <p className="text-slate-600 text-xs truncate mt-0.5">{person.university}</p>}
-                      {person.major && <p className="text-slate-500 text-xs truncate">{person.major}</p>}
                     </div>
-                  </div>
-                  {person.bio && (
-                    <p className="text-slate-600 text-xs line-clamp-2 mb-3 leading-relaxed">{person.bio}</p>
-                  )}
-                  {skills.length > 0 && (
-                    <div className="flex flex-wrap gap-1 mb-3">
-                      {skills.slice(0, 3).map((s) => (
-                        <span key={s} className="text-xs bg-slate-100 text-slate-700 px-2 py-0.5 rounded-full">{s}</span>
-                      ))}
-                      {skills.length > 3 && <span className="text-xs text-slate-500">+{skills.length - 3}</span>}
+
+                    {person.bio && (
+                      <p className="mt-4 line-clamp-3 text-sm leading-7 text-slate-600 dark:text-slate-300">
+                        {person.bio}
+                      </p>
+                    )}
+
+                    {skills.length > 0 && (
+                      <div className="mt-4 flex flex-wrap gap-2">
+                        {skills.slice(0, 3).map((skill) => (
+                          <span key={skill} className="tag-chip">
+                            {skill}
+                          </span>
+                        ))}
+                        {skills.length > 3 && (
+                          <span className="rounded-full border border-slate-300 px-3 py-1 text-xs font-semibold text-slate-500 dark:border-slate-700 dark:text-slate-400">
+                            +{skills.length - 3}
+                          </span>
+                        )}
+                      </div>
+                    )}
+
+                    <div className="mt-5 grid grid-cols-2 gap-3 text-sm">
+                      <div className="rounded-[1rem] border border-slate-200 bg-white/70 px-3 py-3 text-slate-600 dark:border-slate-800 dark:bg-slate-950/45 dark:text-slate-300">
+                        <p className="text-xs uppercase tracking-[0.18em] text-slate-400">
+                          Gigs
+                        </p>
+                        <p className="mt-1 font-semibold text-slate-950 dark:text-slate-100">
+                          {person._count.postedGigs}
+                        </p>
+                      </div>
+                      <div className="rounded-[1rem] border border-slate-200 bg-white/70 px-3 py-3 text-slate-600 dark:border-slate-800 dark:bg-slate-950/45 dark:text-slate-300">
+                        <p className="text-xs uppercase tracking-[0.18em] text-slate-400">
+                          Projects
+                        </p>
+                        <p className="mt-1 font-semibold text-slate-950 dark:text-slate-100">
+                          {person._count.createdProjects}
+                        </p>
+                      </div>
                     </div>
-                  )}
-                  <div className="flex items-center justify-between text-xs text-slate-500">
-                    <span>{person._count.postedGigs} gig{person._count.postedGigs !== 1 ? "s" : ""}</span>
-                    <span>{person._count.createdProjects} project{person._count.createdProjects !== 1 ? "s" : ""}</span>
-                    <div className="flex gap-2">
-                      {person.githubUrl && <span title="GitHub">⌨️</span>}
-                      {person.websiteUrl && <span title="Website">🌐</span>}
-                      {person.linkedinUrl && <span title="LinkedIn">💼</span>}
-                    </div>
-                  </div>
+                  </article>
                 </Link>
               );
             })}
-          </div>
+          </section>
         )}
 
-        {/* Pagination */}
         {pages > 1 && (
-          <div className="flex items-center justify-center gap-2 mt-8">
-            <button onClick={() => setPage((p) => Math.max(1, p - 1))} disabled={page <= 1}
-              className="px-4 py-2 bg-white border border-slate-300 rounded-lg text-slate-700 hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed text-sm">
-              ← Prev
-            </button>
-            <span className="text-slate-600 text-sm">Page {page} of {pages}</span>
-            <button onClick={() => setPage((p) => Math.min(pages, p + 1))} disabled={page >= pages}
-              className="px-4 py-2 bg-white border border-slate-300 rounded-lg text-slate-700 hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed text-sm">
-              Next →
-            </button>
-          </div>
+          <section className="flex items-center justify-center gap-3">
+            <Button
+              variant="outline"
+              onClick={() => setPage((currentPage) => Math.max(1, currentPage - 1))}
+              disabled={page <= 1}
+            >
+              Previous
+            </Button>
+            <span className="text-sm text-slate-500 dark:text-slate-400">
+              Page {page} of {pages}
+            </span>
+            <Button
+              variant="outline"
+              onClick={() => setPage((currentPage) => Math.min(pages, currentPage + 1))}
+              disabled={page >= pages}
+            >
+              Next
+            </Button>
+          </section>
         )}
-      </div>
+      </main>
     </div>
   );
 }

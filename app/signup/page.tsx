@@ -1,75 +1,125 @@
 "use client";
 
 import Link from "next/link";
+import { BrandLockup } from "@/components/Brand";
 import { Button } from "@/components/ui/button";
+import {
+  ArrowRightIcon,
+  BriefcaseIcon,
+  FolderStackIcon,
+  SparkIcon,
+} from "@/components/ui/icons";
+
+const roles = [
+  {
+    href: "/signup/freelancer",
+    title: "Freelancer",
+    description:
+      "Offer your skills, apply for tasks, and build a profile that helps clients trust you fast.",
+    icon: BriefcaseIcon,
+    accent: "from-cyan-500 to-blue-500",
+  },
+  {
+    href: "/signup/client",
+    title: "Client",
+    description:
+      "Post gigs, discover talent, and manage work opportunities with a sharper presentation.",
+    icon: FolderStackIcon,
+    accent: "from-amber-500 to-orange-500",
+  },
+];
 
 export default function SignupPage() {
   return (
-    <main className="min-h-screen bg-gradient-to-b from-slate-50 to-white flex items-center justify-center px-4">
-      <div className="w-full max-w-4xl">
-        <div className="text-center mb-8">
-          <Link href="/" className="inline-flex items-center gap-2 text-slate-600 hover:text-slate-900 transition-colors text-sm">
-            Back to home
-          </Link>
-        </div>
+    <main className="app-shell">
+      <div className="page-shell flex min-h-[calc(100dvh-4rem)] items-center">
+        <div className="grid w-full gap-8 lg:grid-cols-[1fr_1.05fr]">
+          <section className="hero-card">
+            <BrandLockup />
+            <h1 className="mt-8 text-4xl font-semibold tracking-[-0.04em] text-slate-950 dark:text-slate-50">
+              Choose how you want to grow inside Task Hive.
+            </h1>
+            <p className="mt-4 max-w-xl text-base leading-7 text-slate-600 dark:text-slate-300">
+              Start with the role that matches how you work today. You can post
+              opportunities, earn through gigs, and collaborate through polished project
+              spaces.
+            </p>
 
-        <div className="bg-white border border-slate-200 rounded-xl p-12 shadow-sm">
-          <div className="flex items-center justify-center gap-3 mb-4">
-            <span className="text-4xl">Task Hive</span>
-            <h1 className="text-4xl font-bold text-slate-900">Task Hive</h1>
-          </div>
-          <p className="text-slate-600 text-center mb-12 text-lg">
-            Join the hive and start collaborating
-          </p>
-
-          <div className="grid md:grid-cols-2 gap-6 mt-8">
-            <div className="border border-slate-200 rounded-lg p-8 hover:border-amber-400 hover:shadow-lg transition-all">
-              <div className="text-5xl mb-4">Freelancer</div>
-              <h2 className="text-2xl font-bold text-slate-900 mb-2">Freelancer</h2>
-              <p className="text-slate-600 mb-6">
-                Complete gigs, build your skills, and earn money by offering your services.
-              </p>
-              <ul className="space-y-2 mb-8 text-sm text-slate-600">
-                <li>Browse available gigs</li>
-                <li>Showcase your portfolio</li>
-                <li>Earn competitive rates</li>
-                <li>Build your reputation</li>
-              </ul>
-              <Link href="/signup/freelancer" className="w-full">
-                <Button className="w-full bg-blue-600 hover:bg-blue-700 text-white">
-                  Sign Up as Freelancer
-                </Button>
-              </Link>
+            <div className="mt-8 grid gap-4">
+              {[
+                "Profiles built to look credible from day one",
+                "Direct messaging and project collaboration tools included",
+                "Theme-aware, mobile-friendly pages across the whole app",
+              ].map((item) => (
+                <div
+                  key={item}
+                  className="flex items-start gap-3 rounded-[1.2rem] border border-slate-200 bg-white/70 px-4 py-3 dark:border-slate-800 dark:bg-slate-950/45"
+                >
+                  <SparkIcon className="mt-0.5 h-5 w-5 text-amber-500" />
+                  <p className="text-sm leading-7 text-slate-600 dark:text-slate-300">
+                    {item}
+                  </p>
+                </div>
+              ))}
             </div>
 
-            <div className="border border-slate-200 rounded-lg p-8 hover:border-amber-400 hover:shadow-lg transition-all">
-              <div className="text-5xl mb-4">Client</div>
-              <h2 className="text-2xl font-bold text-slate-900 mb-2">Client</h2>
-              <p className="text-slate-600 mb-6">
-                Post gigs and projects, find talented freelancers, and grow your business.
-              </p>
-              <ul className="space-y-2 mb-8 text-sm text-slate-600">
-                <li>Post unlimited gigs</li>
-                <li>Access skilled talent pool</li>
-                <li>Manage projects easily</li>
-                <li>Scale your team</li>
-              </ul>
-              <Link href="/signup/client" className="w-full">
-                <Button className="w-full bg-purple-600 hover:bg-purple-700 text-white">
-                  Sign Up as Client
-                </Button>
+            <div className="mt-8">
+              <Link href="/">
+                <Button variant="outline">Back to home</Button>
               </Link>
             </div>
-          </div>
+          </section>
 
-          <div className="mt-10 pt-8 border-t border-slate-200 text-center">
-            <p className="text-slate-600">
+          <section className="surface-card rounded-[2rem] p-6 sm:p-8">
+            <div className="max-w-2xl">
+              <p className="page-badge">Create an account</p>
+              <h2 className="mt-5 text-3xl font-semibold tracking-[-0.03em] text-slate-950 dark:text-slate-50">
+                Pick your entry point
+              </h2>
+              <p className="mt-3 text-sm leading-7 text-slate-600 dark:text-slate-300">
+                Each path gives you a tailored onboarding flow while keeping the same
+                professional product experience.
+              </p>
+            </div>
+
+            <div className="mt-8 grid gap-5 md:grid-cols-2">
+              {roles.map((role) => {
+                const Icon = role.icon;
+
+                return (
+                  <Link key={role.href} href={role.href} className="group">
+                    <article className="section-card h-full p-6 transition-transform duration-200 group-hover:-translate-y-1">
+                      <span
+                        className={`inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br ${role.accent} text-white shadow-sm`}
+                      >
+                        <Icon className="h-5 w-5" />
+                      </span>
+                      <h3 className="mt-5 text-2xl font-semibold text-slate-950 dark:text-slate-50">
+                        {role.title}
+                      </h3>
+                      <p className="mt-3 text-sm leading-7 text-slate-600 dark:text-slate-300">
+                        {role.description}
+                      </p>
+                      <div className="mt-6 inline-flex items-center gap-2 text-sm font-semibold text-slate-900 dark:text-slate-100">
+                        Continue
+                        <ArrowRightIcon className="h-4 w-4" />
+                      </div>
+                    </article>
+                  </Link>
+                );
+              })}
+            </div>
+
+            <p className="mt-8 text-center text-sm text-slate-600 dark:text-slate-300">
               Already have an account?{" "}
-              <Link href="/login" className="text-amber-600 hover:text-amber-700 font-medium">
-                Login here
+              <Link
+                href="/login"
+                className="font-semibold text-amber-600 transition-colors hover:text-amber-500 dark:text-amber-300"
+              >
+                Log in here
               </Link>
             </p>
-          </div>
+          </section>
         </div>
       </div>
     </main>

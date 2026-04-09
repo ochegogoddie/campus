@@ -5,6 +5,7 @@ import { useSession } from "next-auth/react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import Navbar from "@/components/Navbar";
+import AvatarImage from "@/components/ui/Avatar";
 
 interface PublicUser {
   id: string;
@@ -26,13 +27,14 @@ interface PublicUser {
 }
 
 function Avatar({ user, size = 20 }: { user: { name: string; avatar?: string }; size?: number }) {
-  const sz = `w-${size} h-${size}`;
-  return user.avatar ? (
-    <img src={user.avatar} alt={user.name} className={`${sz} rounded-full object-cover ring-4 ring-slate-200`} />
-  ) : (
-    <div className={`${sz} rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center text-white font-bold text-3xl ring-4 ring-slate-200 flex-shrink-0`}>
-      {user.name.charAt(0).toUpperCase()}
-    </div>
+  return (
+    <AvatarImage
+      name={user.name}
+      src={user.avatar}
+      size={size * 4}
+      className="rounded-full ring-4 ring-slate-200 dark:ring-slate-800"
+      tone="cyan"
+    />
   );
 }
 

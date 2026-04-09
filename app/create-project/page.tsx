@@ -6,6 +6,8 @@ import { useSession } from "next-auth/react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import Navbar from "@/components/Navbar";
+import PageHero from "@/components/PageHero";
+import { FolderStackIcon, GlobeIcon, SparkIcon } from "@/components/ui/icons";
 
 export default function CreateProjectPage() {
   const { data: session } = useSession();
@@ -23,14 +25,14 @@ export default function CreateProjectPage() {
   });
 
   const handleChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
+    event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
   ) => {
-    const { name, value } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: value }));
+    const { name, value } = event.target;
+    setFormData((previous) => ({ ...previous, [name]: value }));
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSubmit = async (event: React.FormEvent) => {
+    event.preventDefault();
     setError("");
     setIsLoading(true);
 
@@ -44,9 +46,9 @@ export default function CreateProjectPage() {
           category: formData.category,
           skillsNeeded: formData.skillsNeeded
             .split(",")
-            .map((s) => s.trim())
+            .map((skill) => skill.trim())
             .filter(Boolean),
-          maxMembers: parseInt(formData.maxMembers),
+          maxMembers: parseInt(formData.maxMembers, 10),
           visibility: formData.visibility,
           readme: formData.readme || undefined,
         }),
@@ -58,8 +60,8 @@ export default function CreateProjectPage() {
       }
 
       router.push("/projects?success=true");
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "An error occurred");
+    } catch (submitError) {
+      setError(submitError instanceof Error ? submitError.message : "An error occurred");
     } finally {
       setIsLoading(false);
     }
@@ -67,14 +69,21 @@ export default function CreateProjectPage() {
 
   if (!session) {
     return (
-      <div className="min-h-screen bg-gradient-to-b from-slate-50 to-white">
+      <div className="app-shell">
         <Navbar />
-        <div className="flex items-center justify-center min-h-[70vh]">
-          <div className="text-center">
-            <p className="text-slate-900 text-lg mb-4">Please log in to create a project</p>
-            <Link href="/login">
-              <Button>Log In</Button>
-            </Link>
+        <div className="page-shell flex min-h-[70vh] items-center justify-center">
+          <div className="section-card max-w-lg p-10 text-center">
+            <p className="text-lg font-semibold text-slate-950 dark:text-slate-50">
+              Log in to create a project
+            </p>
+            <p className="mt-3 text-sm leading-7 text-slate-500 dark:text-slate-400">
+              Project spaces are available once you sign in to your account.
+            </p>
+            <div className="mt-6">
+              <Link href="/login">
+                <Button>Log in</Button>
+              </Link>
+            </div>
           </div>
         </div>
       </div>
@@ -82,24 +91,51 @@ export default function CreateProjectPage() {
   }
 
   return (
-    <main className="min-h-screen bg-gradient-to-b from-slate-50 to-white">
+    <div className="app-shell">
       <Navbar />
 
-      {/* Content */}
-      <section className="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-        <h1 className="text-3xl font-bold text-slate-900 mb-8">Create a New Project</h1>
+      <main className="page-shell space-y-8">
+        <PageHero
+          badge="Create a project"
+          title="Set up a collaboration space that looks organized before the first teammate joins."
+          description="Structure your project with a clear title, team size, visibility settings, and a README that gives contributors immediate context."
+          stats={[
+            { label: "Team size target", value: formData.maxMembers, accent: "cyan" },
+            { label: "Visibility", value: formData.visibility, accent: "amber" },
+            { label: "Draft state", value: isLoading ? "Saving" : "Open", accent: "emerald" },
+          ]}
+          aside={
+            <div className="space-y-3">
+              {[
+                "Use a strong project description so the right people join faster.",
+                "Keep visibility public when you want discovery, private when you need control.",
+                "Add a README to make your project feel immediately more serious.",
+              ].map((item) => (
+                <div
+                  key={item}
+                  className="flex items-start gap-3 rounded-[1.2rem] border border-slate-200 bg-white/70 px-4 py-3 dark:border-slate-800 dark:bg-slate-950/45"
+                >
+                  <SparkIcon className="mt-0.5 h-5 w-5 text-cyan-500" />
+                  <p className="text-sm leading-7 text-slate-600 dark:text-slate-300">
+                    {item}
+                  </p>
+                </div>
+              ))}
+            </div>
+          }
+        />
 
         {error && (
-          <div className="bg-red-900/20 border border-red-700 text-red-300 px-4 py-3 rounded-md mb-6">
+          <div className="rounded-[1.2rem] border border-red-300 bg-red-50 px-4 py-3 text-sm text-red-800 dark:border-red-900 dark:bg-red-950/30 dark:text-red-200">
             {error}
           </div>
         )}
 
-        <form onSubmit={handleSubmit} className="bg-white border border-slate-200 rounded-lg p-8">
-          <div className="space-y-6">
+        <form onSubmit={handleSubmit} className="section-card p-6 sm:p-8">
+          <div className="grid gap-6">
             <div>
-              <label htmlFor="title" className="block text-sm font-medium text-slate-700 mb-2">
-                Project Title *
+              <label className="mb-2 block text-sm font-semibold text-slate-800 dark:text-slate-200">
+                Project title
               </label>
               <input
                 id="title"
@@ -108,14 +144,14 @@ export default function CreateProjectPage() {
                 required
                 value={formData.title}
                 onChange={handleChange}
-                className="w-full px-4 py-2 bg-slate-50 border border-slate-300 rounded-md text-slate-900 placeholder-slate-500 focus:outline-none focus:border-amber-500"
-                placeholder="e.g., Build a Student Marketplace App"
+                className="app-input"
+                placeholder="Name the project clearly"
               />
             </div>
 
             <div>
-              <label htmlFor="description" className="block text-sm font-medium text-slate-700 mb-2">
-                Description *
+              <label className="mb-2 block text-sm font-semibold text-slate-800 dark:text-slate-200">
+                Description
               </label>
               <textarea
                 id="description"
@@ -123,22 +159,22 @@ export default function CreateProjectPage() {
                 required
                 value={formData.description}
                 onChange={handleChange}
-                className="w-full px-4 py-2 bg-slate-50 border border-slate-300 rounded-md text-slate-900 placeholder-slate-500 focus:outline-none focus:border-amber-500 min-h-32"
-                placeholder="Describe your project goals and vision..."
+                className="app-textarea"
+                placeholder="Describe the goal, expected contributors, and where the project is headed."
               />
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid gap-4 sm:grid-cols-2">
               <div>
-                <label htmlFor="category" className="block text-sm font-medium text-slate-700 mb-2">
-                  Project Type *
+                <label className="mb-2 block text-sm font-semibold text-slate-800 dark:text-slate-200">
+                  Project type
                 </label>
                 <select
                   id="category"
                   name="category"
                   value={formData.category}
                   onChange={handleChange}
-                  className="w-full px-4 py-2 bg-slate-50 border border-slate-300 rounded-md text-slate-900 focus:outline-none focus:border-amber-500"
+                  className="app-select"
                 >
                   <option value="web-app">Web App</option>
                   <option value="mobile">Mobile App</option>
@@ -149,8 +185,8 @@ export default function CreateProjectPage() {
               </div>
 
               <div>
-                <label htmlFor="maxMembers" className="block text-sm font-medium text-slate-700 mb-2">
-                  Max Team Size *
+                <label className="mb-2 block text-sm font-semibold text-slate-800 dark:text-slate-200">
+                  Max team size
                 </label>
                 <input
                   id="maxMembers"
@@ -161,14 +197,14 @@ export default function CreateProjectPage() {
                   max="20"
                   value={formData.maxMembers}
                   onChange={handleChange}
-                  className="w-full px-4 py-2 bg-slate-50 border border-slate-300 rounded-md text-slate-900 placeholder-slate-500 focus:outline-none focus:border-amber-500"
+                  className="app-input"
                 />
               </div>
             </div>
 
             <div>
-              <label htmlFor="skillsNeeded" className="block text-sm font-medium text-slate-700 mb-2">
-                Required Skills (comma-separated)
+              <label className="mb-2 block text-sm font-semibold text-slate-800 dark:text-slate-200">
+                Skills needed
               </label>
               <input
                 id="skillsNeeded"
@@ -176,52 +212,65 @@ export default function CreateProjectPage() {
                 type="text"
                 value={formData.skillsNeeded}
                 onChange={handleChange}
-                className="w-full px-4 py-2 bg-slate-50 border border-slate-300 rounded-md text-slate-900 placeholder-slate-500 focus:outline-none focus:border-amber-500"
-                placeholder="e.g., React, Node.js, MongoDB"
+                className="app-input"
+                placeholder="Separate skills with commas"
               />
             </div>
 
-            {/* Visibility */}
             <div>
-              <label className="block text-sm font-medium text-slate-700 mb-3">Project Visibility</label>
-              <div className="grid grid-cols-2 gap-3">
+              <p className="mb-3 text-sm font-semibold text-slate-800 dark:text-slate-200">
+                Visibility
+              </p>
+              <div className="grid gap-4 sm:grid-cols-2">
                 <button
                   type="button"
-                  onClick={() => setFormData((p) => ({ ...p, visibility: "public" }))}
-                  className={`flex items-center gap-3 p-4 rounded-lg border-2 transition-colors text-left ${
+                  onClick={() => setFormData((previous) => ({ ...previous, visibility: "public" }))}
+                  className={`rounded-[1.25rem] border p-4 text-left transition-all ${
                     formData.visibility === "public"
-                      ? "border-emerald-500 bg-emerald-50"
-                      : "border-slate-300 bg-white hover:border-slate-400"
+                      ? "border-cyan-400 bg-cyan-50 dark:border-cyan-500 dark:bg-cyan-950/20"
+                      : "border-slate-300 bg-white/70 dark:border-slate-700 dark:bg-slate-950/45"
                   }`}
                 >
-                  <span className="text-2xl">🌎</span>
-                  <div>
-                    <p className="font-medium text-slate-900 text-sm">Public</p>
-                    <p className="text-xs text-slate-600">Anyone can view files & discussions</p>
+                  <div className="flex items-center gap-3">
+                    <span className="inline-flex h-10 w-10 items-center justify-center rounded-2xl bg-cyan-500 text-white">
+                      <GlobeIcon className="h-4 w-4" />
+                    </span>
+                    <div>
+                      <p className="font-semibold text-slate-950 dark:text-slate-50">Public</p>
+                      <p className="text-sm text-slate-500 dark:text-slate-400">
+                        Anyone can view files and discussions.
+                      </p>
+                    </div>
                   </div>
                 </button>
+
                 <button
                   type="button"
-                  onClick={() => setFormData((p) => ({ ...p, visibility: "private" }))}
-                  className={`flex items-center gap-3 p-4 rounded-lg border-2 transition-colors text-left ${
+                  onClick={() => setFormData((previous) => ({ ...previous, visibility: "private" }))}
+                  className={`rounded-[1.25rem] border p-4 text-left transition-all ${
                     formData.visibility === "private"
-                      ? "border-rose-500 bg-rose-50"
-                      : "border-slate-300 bg-white hover:border-slate-400"
+                      ? "border-amber-400 bg-amber-50 dark:border-amber-500 dark:bg-amber-950/20"
+                      : "border-slate-300 bg-white/70 dark:border-slate-700 dark:bg-slate-950/45"
                   }`}
                 >
-                  <span className="text-2xl">🔒</span>
-                  <div>
-                    <p className="font-medium text-slate-900 text-sm">Private</p>
-                    <p className="text-xs text-slate-600">Only contributors can access content</p>
+                  <div className="flex items-center gap-3">
+                    <span className="inline-flex h-10 w-10 items-center justify-center rounded-2xl bg-amber-500 text-slate-950">
+                      <FolderStackIcon className="h-4 w-4" />
+                    </span>
+                    <div>
+                      <p className="font-semibold text-slate-950 dark:text-slate-50">Private</p>
+                      <p className="text-sm text-slate-500 dark:text-slate-400">
+                        Only contributors can access project content.
+                      </p>
+                    </div>
                   </div>
                 </button>
               </div>
             </div>
 
-            {/* README */}
             <div>
-              <label htmlFor="readme" className="block text-sm font-medium text-slate-700 mb-2">
-                README / Project Overview <span className="text-slate-500 text-xs font-normal">(optional, markdown supported)</span>
+              <label className="mb-2 block text-sm font-semibold text-slate-800 dark:text-slate-200">
+                README / project overview
               </label>
               <textarea
                 id="readme"
@@ -229,17 +278,24 @@ export default function CreateProjectPage() {
                 value={formData.readme}
                 onChange={handleChange}
                 rows={6}
-                className="w-full px-4 py-2 bg-slate-50 border border-slate-300 rounded-md text-slate-900 placeholder-slate-500 focus:outline-none focus:border-amber-500 font-mono text-sm"
-                placeholder="## My Project&#10;&#10;A brief overview of what this project is about, how to get started, and contribution guidelines..."
+                className="app-textarea font-mono text-sm"
+                placeholder="Use this space to outline setup notes, goals, and contribution guidelines."
               />
             </div>
 
-            <Button type="submit" className="w-full" disabled={isLoading}>
-              {isLoading ? "Creating..." : "Create Project"}
-            </Button>
+            <div className="flex flex-col gap-3 sm:flex-row">
+              <Button type="submit" className="sm:min-w-[180px]" disabled={isLoading}>
+                {isLoading ? "Creating..." : "Create project"}
+              </Button>
+              <Link href="/projects">
+                <Button type="button" variant="outline">
+                  Cancel
+                </Button>
+              </Link>
+            </div>
           </div>
         </form>
-      </section>
-    </main>
+      </main>
+    </div>
   );
 }

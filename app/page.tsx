@@ -5,6 +5,17 @@ import Link from "next/link";
 import { useSession } from "next-auth/react";
 import { Button } from "@/components/ui/button";
 import Navbar from "@/components/Navbar";
+import PageHero from "@/components/PageHero";
+import {
+  ArrowRightIcon,
+  BriefcaseIcon,
+  ChartIcon,
+  ChatCircleIcon,
+  CheckCircleIcon,
+  FolderStackIcon,
+  SparkIcon,
+  UsersIcon,
+} from "@/components/ui/icons";
 
 interface Gig {
   id: string;
@@ -33,230 +44,422 @@ interface PlatformStats {
   totalUsers: number;
 }
 
+const pillars = [
+  {
+    title: "Fast project discovery",
+    description:
+      "Find serious campus work without scrolling through messy listings or dead-end groups.",
+    icon: BriefcaseIcon,
+  },
+  {
+    title: "Credible collaboration",
+    description:
+      "Launch projects, share files, and keep discussions inside one polished workspace.",
+    icon: FolderStackIcon,
+  },
+  {
+    title: "Professional student profiles",
+    description:
+      "Show your strengths with a profile that looks more like a portfolio than a placeholder.",
+    icon: UsersIcon,
+  },
+];
+
+const proofPoints = [
+  "Campus-first categories for gigs, services, and team projects",
+  "Built-in messaging and notifications to keep work moving",
+  "Admin-ready controls for platform growth and moderation",
+];
+
 export default function Home() {
   const { data: session } = useSession();
-  const [stats, setStats] = useState<PlatformStats>({ totalGigs: 0, totalProjects: 0, freelancers: 0, clients: 0, totalUsers: 0 });
+  const [stats, setStats] = useState<PlatformStats>({
+    totalGigs: 0,
+    totalProjects: 0,
+    freelancers: 0,
+    clients: 0,
+    totalUsers: 0,
+  });
   const [recentGigs, setRecentGigs] = useState<Gig[]>([]);
   const [recentProjects, setRecentProjects] = useState<Project[]>([]);
   const [statsLoaded, setStatsLoaded] = useState(false);
 
   useEffect(() => {
-    // Fetch live platform stats
     fetch("/api/stats")
-      .then((r) => r.json())
-      .then((d) => { setStats(d); setStatsLoaded(true); })
+      .then((response) => response.json())
+      .then((data) => {
+        setStats(data);
+        setStatsLoaded(true);
+      })
       .catch(() => setStatsLoaded(true));
 
-    // Fetch 3 most recent gigs
     fetch("/api/gigs?take=3")
-      .then((r) => r.json())
-      .then((d) => setRecentGigs(d.gigs || []))
+      .then((response) => response.json())
+      .then((data) => setRecentGigs(data.gigs || []))
       .catch(() => {});
 
-    // Fetch 2 most recent projects
     fetch("/api/projects?take=2")
-      .then((r) => r.json())
-      .then((d) => setRecentProjects(d.projects || []))
+      .then((response) => response.json())
+      .then((data) => setRecentProjects(data.projects || []))
       .catch(() => {});
   }, []);
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-slate-50 to-white">
+    <div className="app-shell">
       <Navbar />
 
-      {/* Hero */}
-      <section className="relative overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-br from-amber-100/30 via-white to-blue-100/20 pointer-events-none" />
-        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-24 pb-20 text-center">
-          <div className="inline-flex items-center gap-2 bg-amber-100 border border-amber-200 rounded-full px-4 py-1.5 text-sm text-amber-700 mb-8">
-            <span className="w-2 h-2 bg-amber-500 rounded-full animate-pulse" />
-            For students, by students
-          </div>
-          <h1 className="text-5xl sm:text-6xl lg:text-7xl font-extrabold text-slate-900 leading-tight mb-6">
-            Campus{" "}
-            <span className="text-transparent bg-clip-text bg-gradient-to-r from-amber-600 to-orange-600">
-              Task Hive
-            </span>
-          </h1>
-          <p className="text-xl text-slate-600 mb-10 max-w-2xl mx-auto leading-relaxed">
-            Get academic help, find tech talent, share campus services, and collaborate with fellow students—all in one buzzing hive.
-          </p>
-          <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Link href="/gigs">
-              <Button size="lg" className="px-8 bg-amber-600 hover:bg-amber-700">Available Tasks</Button>
-            </Link>
-            <Link href="/projects">
-              <Button size="lg" variant="outline" className="px-8 border-amber-300 text-amber-700 hover:bg-amber-50">
-                Explore Projects
-              </Button>
-            </Link>
-          </div>
-
-          {/* Stats bar — live */}
-          <div className="grid grid-cols-4 gap-6 mt-20 max-w-3xl mx-auto">
-            <div>
-              <div className="text-3xl font-bold text-amber-600">
-                {!statsLoaded ? <span className="inline-block w-10 h-8 bg-slate-200 rounded animate-pulse" /> : stats.totalGigs}
-              </div>
-              <p className="text-slate-600 text-sm mt-1">Tasks Posted</p>
-            </div>
-            <div className="border-x border-slate-300">
-              <div className="text-3xl font-bold text-blue-600">
-                {!statsLoaded ? <span className="inline-block w-10 h-8 bg-slate-200 rounded animate-pulse" /> : stats.freelancers}
-              </div>
-              <p className="text-slate-600 text-sm mt-1">Freelancers</p>
-            </div>
-            <div className="border-x border-slate-300">
-              <div className="text-3xl font-bold text-green-600">
-                {!statsLoaded ? <span className="inline-block w-10 h-8 bg-slate-200 rounded animate-pulse" /> : stats.clients}
-              </div>
-              <p className="text-slate-600 text-sm mt-1">Clients</p>
-            </div>
-            <div>
-              <div className="text-3xl font-bold text-teal-600">
-                {!statsLoaded ? <span className="inline-block w-10 h-8 bg-slate-200 rounded animate-pulse" /> : stats.totalProjects}
-              </div>
-              <p className="text-slate-600 text-sm mt-1">Projects</p>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* How it works */}
-      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20">
-        <h2 className="text-3xl font-bold text-slate-900 text-center mb-14">How the Hive Works</h2>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-10">
-          {[
-            { step: "01", icon: "🔍", title: "Browse freely", desc: "Explore academic help, tech tasks, creative gigs, and campus services—no account required to look around." },
-            { step: "02", icon: "✍️", title: "Join the Hive", desc: "Sign up in seconds with just your name and email. Free forever, no credit cards, no setup fees." },
-            { step: "03", icon: "🚀", title: "Post or Apply", desc: "Post your task and find talented helpers, or apply for tasks that match your skills and schedule." },
-          ].map((item) => (
-            <div key={item.step} className="relative">
-              <div className="text-6xl font-black text-amber-100 mb-4 select-none">{item.step}</div>
-              <div className="text-3xl mb-3">{item.icon}</div>
-              <h3 className="text-lg font-bold text-slate-900 mb-2">{item.title}</h3>
-              <p className="text-slate-600 text-sm leading-relaxed">{item.desc}</p>
-            </div>
-          ))}
-        </div>
-      </section>
-
-      {/* Sample Gigs preview */}
-      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-16 bg-gradient-to-b from-transparent to-slate-100/50 py-10">
-        <div className="flex items-center justify-between mb-8">
-          <h2 className="text-2xl font-bold text-slate-900">Recent Tasks</h2>
-          <Link href="/gigs" className="text-amber-600 hover:text-amber-700 text-sm font-medium transition-colors">
-            View all →
-          </Link>
-        </div>
-        {recentGigs.length === 0 ? (
-          <div className="bg-white border border-slate-200 rounded-xl p-10 text-center text-slate-500">
-            No tasks posted yet.{" "}
-            {session ? (
-              <Link href="/post-gig" className="text-amber-600 hover:underline">Be the first to post one!</Link>
-            ) : (
-              <Link href="/signup" className="text-amber-600 hover:underline">Sign up to post the first task!</Link>
-            )}
-          </div>
-        ) : (
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {recentGigs.map((gig) => (
-              <Link key={gig.id} href={`/gig/${gig.id}`}>
-                <div className="bg-white border border-slate-200 rounded-xl p-6 hover:border-amber-300 hover:shadow-lg transition-all group h-full">
-                  <span className="inline-block bg-amber-100 text-amber-700 px-3 py-1 rounded-full text-xs font-medium mb-4">
-                    {gig.category}
+      <main className="page-shell space-y-16">
+        <PageHero
+          badge="Designed for ambitious campus work"
+          title="Student opportunities should look as professional as the people behind them."
+          description="Task Hive helps students post gigs, discover paid work, build public profiles, and launch collaboration projects inside a premium campus marketplace."
+          actions={
+            <>
+              <Link href="/gigs">
+                <Button size="lg">
+                  Explore tasks
+                  <ArrowRightIcon className="h-4 w-4" />
+                </Button>
+              </Link>
+              <Link href="/projects">
+                <Button size="lg" variant="outline">
+                  View projects
+                </Button>
+              </Link>
+            </>
+          }
+          stats={[
+            {
+              label: "Tasks posted",
+              value: statsLoaded ? `${stats.totalGigs}` : "...",
+              accent: "amber",
+            },
+            {
+              label: "Freelancers active",
+              value: statsLoaded ? `${stats.freelancers}` : "...",
+              accent: "cyan",
+            },
+            {
+              label: "Projects running",
+              value: statsLoaded ? `${stats.totalProjects}` : "...",
+              accent: "emerald",
+            },
+          ]}
+          aside={
+            <div className="space-y-4">
+              <div className="rounded-[1.4rem] border border-slate-200 bg-white/70 p-4 dark:border-slate-800 dark:bg-slate-950/45">
+                <div className="flex items-center gap-3">
+                  <span className="inline-flex h-10 w-10 items-center justify-center rounded-2xl bg-slate-900 text-white dark:bg-slate-100 dark:text-slate-900">
+                    <SparkIcon className="h-5 w-5" />
                   </span>
-                  <h3 className="text-slate-900 font-semibold mb-3 group-hover:text-amber-600 transition-colors line-clamp-2">{gig.title}</h3>
-                  <div className="flex justify-between items-center text-sm">
-                    <span className="text-emerald-600 font-bold text-lg">${gig.budget}</span>
-                    <span className="text-slate-500">{gig.duration}</span>
-                  </div>
-                  <div className="flex justify-between items-center mt-4 pt-4 border-t border-slate-200 text-xs text-slate-500">
-                    <span>{gig.poster.name}</span>
-                    <span>{gig._count.applications} applicants</span>
+                  <div>
+                    <p className="text-sm font-semibold text-slate-900 dark:text-slate-100">
+                      Campus Signal
+                    </p>
+                    <p className="text-sm text-slate-500 dark:text-slate-400">
+                      Stronger trust, clearer discovery, better presentation.
+                    </p>
                   </div>
                 </div>
-              </Link>
-            ))}
-          </div>
-        )}
-      </section>
+              </div>
 
-      {/* Sample Projects preview */}
-      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-20">
-        <div className="flex items-center justify-between mb-8">
-          <h2 className="text-2xl font-bold text-slate-900">Open Projects</h2>
-          <Link href="/projects" className="text-blue-600 hover:text-blue-700 text-sm font-medium transition-colors">
-            View all →
-          </Link>
-        </div>
-        {recentProjects.length === 0 ? (
-          <div className="bg-white border border-slate-200 rounded-xl p-10 text-center text-slate-500">
-            No projects yet.{" "}
-            {session ? (
-              <Link href="/create-project" className="text-blue-600 hover:underline">Start the first project!</Link>
-            ) : (
-              <Link href="/signup" className="text-blue-600 hover:underline">Sign up to create a project!</Link>
-            )}
-          </div>
-        ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {recentProjects.map((proj) => (
-              <Link key={proj.id} href={`/project/${proj.id}`}>
-                <div className="bg-white border border-slate-200 rounded-xl p-6 hover:border-blue-300 hover:shadow-lg transition-all group h-full">
-                  <span className="inline-block bg-blue-100 text-blue-700 px-3 py-1 rounded-full text-xs font-medium mb-4">
-                    {proj.category.replace("-", " ")}
-                  </span>
-                  <h3 className="text-slate-900 font-semibold mb-4 group-hover:text-blue-600 transition-colors line-clamp-2">{proj.title}</h3>
-                  <div className="flex items-center justify-between">
-                    <span className="text-slate-600 text-sm">{proj.createdBy.name}</span>
-                    <span className="text-slate-500 text-sm">{proj._count.members}/{proj.maxMembers} members</span>
+              <div className="grid gap-3">
+                {proofPoints.map((point) => (
+                  <div
+                    key={point}
+                    className="flex items-start gap-3 rounded-[1.2rem] border border-slate-200 bg-white/65 px-4 py-3 dark:border-slate-800 dark:bg-slate-950/40"
+                  >
+                    <CheckCircleIcon className="mt-0.5 h-5 w-5 text-emerald-500" />
+                    <p className="text-sm leading-6 text-slate-600 dark:text-slate-300">
+                      {point}
+                    </p>
                   </div>
-                  <div className="mt-3 w-full bg-slate-200 rounded-full h-1.5">
-                    <div
-                      className="bg-blue-500 h-1.5 rounded-full transition-all"
-                      style={{ width: `${(proj._count.members / proj.maxMembers) * 100}%` }}
-                    />
-                  </div>
+                ))}
+              </div>
+            </div>
+          }
+        />
+
+        <section className="grid gap-5 lg:grid-cols-3">
+          {pillars.map((pillar) => {
+            const Icon = pillar.icon;
+            return (
+              <article key={pillar.title} className="section-card p-6">
+                <div className="inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-slate-900 text-white shadow-sm dark:bg-slate-100 dark:text-slate-900">
+                  <Icon className="h-5 w-5" />
                 </div>
-              </Link>
-            ))}
-          </div>
-        )}
-      </section>
+                <h2 className="mt-5 text-2xl font-semibold text-slate-950 dark:text-slate-50">
+                  {pillar.title}
+                </h2>
+                <p className="mt-3 text-sm leading-7 text-slate-600 dark:text-slate-300">
+                  {pillar.description}
+                </p>
+              </article>
+            );
+          })}
+        </section>
 
-      {/* CTA Banner — only for guests */}
-      {!session && (
-        <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-24">
-          <div className="bg-gradient-to-r from-amber-100 to-orange-100 border border-amber-300 rounded-2xl p-10 text-center">
-            <h2 className="text-3xl font-bold text-slate-900 mb-3">Ready to join the Hive?</h2>
-            <p className="text-slate-700 mb-8 max-w-md mx-auto">
-              Get academic help, find tech talent, share services, and collaborate with students today.
-            </p>
-            <Link href="/signup">
-              <Button size="lg" className="px-10 bg-amber-600 hover:bg-amber-700">Create free account</Button>
-            </Link>
+        <section className="grid gap-6 lg:grid-cols-[1.2fr_0.8fr]">
+          <div className="section-card p-7">
+            <div className="flex items-center gap-3">
+              <span className="inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-amber-400 to-orange-500 text-slate-950 shadow-sm">
+                <ChartIcon className="h-5 w-5" />
+              </span>
+              <div>
+                <p className="text-sm font-semibold uppercase tracking-[0.22em] text-slate-500 dark:text-slate-400">
+                  Why it stands out
+                </p>
+                <h2 className="mt-1 text-2xl font-semibold text-slate-950 dark:text-slate-50">
+                  A cleaner product experience from first click to final deal
+                </h2>
+              </div>
+            </div>
+            <div className="mt-6 grid gap-4 sm:grid-cols-3">
+              <div className="rounded-[1.3rem] border border-slate-200 bg-white/70 p-4 dark:border-slate-800 dark:bg-slate-950/45">
+                <p className="text-3xl font-semibold text-amber-600 dark:text-amber-300">
+                  {statsLoaded ? stats.totalUsers : "..."}
+                </p>
+                <p className="mt-2 text-sm text-slate-500 dark:text-slate-400">
+                  People visible across campus talent, project teams, and clients.
+                </p>
+              </div>
+              <div className="rounded-[1.3rem] border border-slate-200 bg-white/70 p-4 dark:border-slate-800 dark:bg-slate-950/45">
+                <p className="text-3xl font-semibold text-cyan-600 dark:text-cyan-300">
+                  {statsLoaded ? stats.clients : "..."}
+                </p>
+                <p className="mt-2 text-sm text-slate-500 dark:text-slate-400">
+                  Client-side accounts actively posting campus-ready work.
+                </p>
+              </div>
+              <div className="rounded-[1.3rem] border border-slate-200 bg-white/70 p-4 dark:border-slate-800 dark:bg-slate-950/45">
+                <p className="text-3xl font-semibold text-emerald-600 dark:text-emerald-300">
+                  {statsLoaded ? stats.totalProjects : "..."}
+                </p>
+                <p className="mt-2 text-sm text-slate-500 dark:text-slate-400">
+                  Collaboration spaces where teams can build together in one place.
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <div className="section-card p-7">
+            <div className="flex items-center gap-3">
+              <span className="inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-sky-500 to-cyan-500 text-white shadow-sm">
+                <ChatCircleIcon className="h-5 w-5" />
+              </span>
+              <div>
+                <p className="text-sm font-semibold uppercase tracking-[0.22em] text-slate-500 dark:text-slate-400">
+                  Built-in momentum
+                </p>
+                <h2 className="mt-1 text-2xl font-semibold text-slate-950 dark:text-slate-50">
+                  Surprising extras users actually feel
+                </h2>
+              </div>
+            </div>
+            <div className="mt-6 space-y-4">
+              {[
+                "Live messaging between task owners, freelancers, and project members",
+                "On-platform file sharing and discussions for project collaboration",
+                "A persistent light and dark theme switcher across every page",
+              ].map((item) => (
+                <div
+                  key={item}
+                  className="rounded-[1.2rem] border border-slate-200 bg-white/70 px-4 py-3 text-sm leading-7 text-slate-600 dark:border-slate-800 dark:bg-slate-950/45 dark:text-slate-300"
+                >
+                  {item}
+                </div>
+              ))}
+            </div>
           </div>
         </section>
-      )}
 
-      {/* Footer */}
-      <footer className="border-t border-slate-200 bg-gradient-to-b from-white to-slate-100">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
-          <div className="flex flex-col md:flex-row justify-between items-center gap-4">
-            <div className="flex items-center gap-2">
-              <span className="text-xl">🐝</span>
-              <span className="text-slate-900 font-semibold">Campus Task Hive</span>
+        <section className="space-y-6">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+            <div>
+              <p className="page-badge">Fresh opportunities</p>
+              <h2 className="mt-4 text-3xl font-semibold text-slate-950 dark:text-slate-50">
+                Recent tasks ready for action
+              </h2>
             </div>
-            <div className="flex gap-6 text-sm text-slate-600">
-              <Link href="/gigs" className="hover:text-slate-900 transition-colors">Tasks</Link>
-              <Link href="/projects" className="hover:text-slate-900 transition-colors">Projects</Link>
-              <Link href="/signup" className="hover:text-slate-900 transition-colors">Sign Up</Link>
-            </div>
-            <p className="text-slate-600 text-sm">© 2026 Campus Task Hive</p>
+            <Link
+              href="/gigs"
+              className="text-sm font-semibold text-amber-600 transition-colors hover:text-amber-500 dark:text-amber-300"
+            >
+              View all tasks
+            </Link>
           </div>
-        </div>
-      </footer>
+
+          {recentGigs.length === 0 ? (
+            <div className="section-card p-10 text-center">
+              <p className="text-lg font-semibold text-slate-900 dark:text-slate-100">
+                No tasks posted yet
+              </p>
+              <p className="mt-2 text-sm text-slate-500 dark:text-slate-400">
+                {session
+                  ? "Be the first person to publish a premium-looking task listing."
+                  : "Create an account to post the first task in the hive."}
+              </p>
+              <div className="mt-6">
+                <Link href={session ? "/post-gig" : "/signup"}>
+                  <Button>{session ? "Post the first task" : "Create an account"}</Button>
+                </Link>
+              </div>
+            </div>
+          ) : (
+            <div className="grid gap-5 md:grid-cols-3">
+              {recentGigs.map((gig) => (
+                <Link key={gig.id} href={`/gig/${gig.id}`} className="group">
+                  <article className="section-card h-full p-6 transition-transform duration-200 group-hover:-translate-y-1">
+                    <span className="tag-chip">{gig.category}</span>
+                    <h3 className="mt-5 line-clamp-2 text-xl font-semibold text-slate-950 transition-colors group-hover:text-amber-600 dark:text-slate-50 dark:group-hover:text-amber-300">
+                      {gig.title}
+                    </h3>
+                    <div className="mt-5 flex items-end justify-between gap-3">
+                      <div>
+                        <p className="text-xs uppercase tracking-[0.2em] text-slate-400">
+                          Budget
+                        </p>
+                        <p className="mt-1 text-2xl font-semibold text-emerald-600 dark:text-emerald-300">
+                          KES {gig.budget}
+                        </p>
+                      </div>
+                      <p className="text-sm text-slate-500 dark:text-slate-400">
+                        {gig.duration}
+                      </p>
+                    </div>
+                    <div className="mt-5 flex items-center justify-between border-t border-slate-200 pt-4 text-sm text-slate-500 dark:border-slate-800 dark:text-slate-400">
+                      <span>{gig.poster.name}</span>
+                      <span>{gig._count.applications} applicants</span>
+                    </div>
+                  </article>
+                </Link>
+              ))}
+            </div>
+          )}
+        </section>
+
+        <section className="space-y-6">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+            <div>
+              <p className="page-badge">Collaboration spaces</p>
+              <h2 className="mt-4 text-3xl font-semibold text-slate-950 dark:text-slate-50">
+                Open projects with room to grow
+              </h2>
+            </div>
+            <Link
+              href="/projects"
+              className="text-sm font-semibold text-cyan-700 transition-colors hover:text-cyan-600 dark:text-cyan-300"
+            >
+              Explore projects
+            </Link>
+          </div>
+
+          {recentProjects.length === 0 ? (
+            <div className="section-card p-10 text-center">
+              <p className="text-lg font-semibold text-slate-900 dark:text-slate-100">
+                No projects yet
+              </p>
+              <p className="mt-2 text-sm text-slate-500 dark:text-slate-400">
+                {session
+                  ? "Launch the first collaboration space and bring your team together."
+                  : "Sign up to start the first project on the platform."}
+              </p>
+              <div className="mt-6">
+                <Link href={session ? "/create-project" : "/signup"}>
+                  <Button variant="outline">
+                    {session ? "Create a project" : "Join and create"}
+                  </Button>
+                </Link>
+              </div>
+            </div>
+          ) : (
+            <div className="grid gap-5 md:grid-cols-2">
+              {recentProjects.map((project) => {
+                const fill = Math.min(
+                  100,
+                  Math.round((project._count.members / project.maxMembers) * 100)
+                );
+
+                return (
+                  <Link key={project.id} href={`/project/${project.id}`} className="group">
+                    <article className="section-card h-full p-6 transition-transform duration-200 group-hover:-translate-y-1">
+                      <span className="tag-chip">{project.category.replace("-", " ")}</span>
+                      <h3 className="mt-5 line-clamp-2 text-xl font-semibold text-slate-950 transition-colors group-hover:text-cyan-700 dark:text-slate-50 dark:group-hover:text-cyan-300">
+                        {project.title}
+                      </h3>
+                      <p className="mt-4 text-sm text-slate-500 dark:text-slate-400">
+                        Created by {project.createdBy.name}
+                      </p>
+                      <div className="mt-5 h-2 rounded-full bg-slate-200 dark:bg-slate-800">
+                        <div
+                          className="h-2 rounded-full bg-gradient-to-r from-cyan-500 to-blue-500"
+                          style={{ width: `${fill}%` }}
+                        />
+                      </div>
+                      <div className="mt-4 flex items-center justify-between text-sm text-slate-500 dark:text-slate-400">
+                        <span>
+                          {project._count.members}/{project.maxMembers} members
+                        </span>
+                        <span>{fill}% full</span>
+                      </div>
+                    </article>
+                  </Link>
+                );
+              })}
+            </div>
+          )}
+        </section>
+
+        {!session && (
+          <section className="hero-card">
+            <div className="grid gap-6 lg:grid-cols-[1.1fr_0.9fr] lg:items-center">
+              <div>
+                <p className="page-badge">Ready to join the hive?</p>
+                <h2 className="mt-5 text-4xl font-semibold tracking-[-0.04em] text-slate-950 dark:text-slate-50">
+                  Build a profile, get discovered, and make your campus work look serious.
+                </h2>
+                <p className="mt-4 max-w-xl text-base leading-7 text-slate-600 dark:text-slate-300">
+                  Whether you want to hire, freelance, or collaborate, Task Hive gives
+                  you a more polished starting point than a generic notice board.
+                </p>
+                <div className="mt-7">
+                  <Link href="/signup">
+                    <Button size="lg">
+                      Create your account
+                      <ArrowRightIcon className="h-4 w-4" />
+                    </Button>
+                  </Link>
+                </div>
+              </div>
+
+              <div className="grid gap-3">
+                {[
+                  {
+                    title: "Better first impressions",
+                    copy: "Cleaner task cards, clearer project spaces, and stronger user profiles.",
+                  },
+                  {
+                    title: "Built for growth",
+                    copy: "The admin area, messaging, and support entry points are ready to scale.",
+                  },
+                ].map((item) => (
+                  <div
+                    key={item.title}
+                    className="rounded-[1.4rem] border border-slate-200 bg-white/70 p-5 dark:border-slate-800 dark:bg-slate-950/45"
+                  >
+                    <h3 className="text-lg font-semibold text-slate-950 dark:text-slate-50">
+                      {item.title}
+                    </h3>
+                    <p className="mt-2 text-sm leading-7 text-slate-600 dark:text-slate-300">
+                      {item.copy}
+                    </p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </section>
+        )}
+      </main>
     </div>
   );
 }

@@ -5,7 +5,10 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { useSession } from "next-auth/react";
 import Link from "next/link";
 import { signIn } from "next-auth/react";
+import { BrandLockup } from "@/components/Brand";
 import { Button } from "@/components/ui/button";
+import { ArrowRightIcon } from "@/components/ui/icons";
+import { PasswordInput } from "@/components/ui/PasswordInput";
 
 export function LoginForm() {
   const router = useRouter();
@@ -19,7 +22,6 @@ export function LoginForm() {
     password: "",
   });
 
-  // Watch for session changes to redirect
   useEffect(() => {
     if (session?.user?.role === "ADMIN") {
       router.push("/admin");
@@ -28,13 +30,13 @@ export function LoginForm() {
     }
   }, [session, router]);
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: value }));
+  const handleChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = event.target;
+    setFormData((previous) => ({ ...previous, [name]: value }));
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSubmit = async (event: React.FormEvent) => {
+    event.preventDefault();
     setError("");
     setIsLoading(true);
 
@@ -48,8 +50,6 @@ export function LoginForm() {
       if (!result?.ok) {
         throw new Error("Incorrect credentials");
       }
-
-      // The useEffect hook will handle the redirect based on the session
     } catch {
       setError("Incorrect credentials");
       setIsLoading(false);
@@ -58,27 +58,35 @@ export function LoginForm() {
 
   return (
     <>
-      <div className="flex items-center gap-2 mb-2">
-        <span className="text-3xl">🐝</span>
-        <h1 className="text-3xl font-bold text-slate-900">Task Hive</h1>
+      <BrandLockup />
+      <div className="mt-8">
+        <h1 className="text-3xl font-semibold tracking-[-0.03em] text-slate-950 dark:text-slate-50">
+          Sign in to your account
+        </h1>
+        <p className="mt-3 text-sm leading-7 text-slate-600 dark:text-slate-300">
+          Pick up your tasks, conversations, and collaborations right where you left
+          them.
+        </p>
       </div>
-      <p className="text-slate-600 mb-8">Sign in to your account</p>
 
       {registered && (
-        <div className="bg-emerald-100 border border-emerald-300 text-emerald-800 px-4 py-3 rounded-md mb-6">
-          Account created! Please log in.
+        <div className="mt-6 rounded-[1.2rem] border border-emerald-300 bg-emerald-50 px-4 py-3 text-sm text-emerald-800 dark:border-emerald-900 dark:bg-emerald-950/30 dark:text-emerald-200">
+          Account created successfully. Sign in to continue.
         </div>
       )}
 
       {error && (
-        <div className="bg-red-100 border border-red-300 text-red-800 px-4 py-3 rounded-md mb-6">
+        <div className="mt-6 rounded-[1.2rem] border border-red-300 bg-red-50 px-4 py-3 text-sm text-red-800 dark:border-red-900 dark:bg-red-950/30 dark:text-red-200">
           {error}
         </div>
       )}
 
-      <form onSubmit={handleSubmit} className="space-y-4">
+      <form onSubmit={handleSubmit} className="mt-8 space-y-4">
         <div>
-          <label htmlFor="username" className="block text-sm font-medium text-slate-900 mb-2">
+          <label
+            htmlFor="username"
+            className="mb-2 block text-sm font-semibold text-slate-800 dark:text-slate-200"
+          >
             Username
           </label>
           <input
@@ -88,39 +96,43 @@ export function LoginForm() {
             required
             value={formData.username}
             onChange={handleChange}
-            className="w-full px-4 py-2 bg-white border border-slate-300 rounded-md text-slate-900 placeholder-slate-500 focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-200"
-            placeholder="Greg Org"
+            className="app-input"
+            placeholder="Enter your username"
           />
         </div>
 
         <div>
-          <label htmlFor="password" className="block text-sm font-medium text-slate-900 mb-2">
+          <label
+            htmlFor="password"
+            className="mb-2 block text-sm font-semibold text-slate-800 dark:text-slate-200"
+          >
             Password
           </label>
-          <input
+          <PasswordInput
             id="password"
             name="password"
-            type="password"
             required
             value={formData.password}
             onChange={handleChange}
-            className="w-full px-4 py-2 bg-white border border-slate-300 rounded-md text-slate-900 placeholder-slate-500 focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-200"
-            placeholder="••••••••"
+            placeholder="Enter your password"
           />
         </div>
 
-        <Button className="w-full bg-amber-600 hover:bg-amber-700 text-white" disabled={isLoading}>
+        <Button className="mt-2 w-full" disabled={isLoading}>
           {isLoading ? "Signing in..." : "Sign In"}
+          {!isLoading && <ArrowRightIcon className="h-4 w-4" />}
         </Button>
       </form>
 
-      <p className="text-slate-600 text-sm mt-6 text-center">
+      <p className="mt-6 text-center text-sm text-slate-600 dark:text-slate-300">
         Don&apos;t have an account?{" "}
-        <Link href="/signup" className="text-amber-600 hover:text-amber-700 font-medium">
+        <Link
+          href="/signup"
+          className="font-semibold text-amber-600 transition-colors hover:text-amber-500 dark:text-amber-300"
+        >
           Sign up here
         </Link>
       </p>
     </>
   );
 }
-

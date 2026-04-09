@@ -5,6 +5,13 @@ import { useSession } from "next-auth/react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import Navbar from "@/components/Navbar";
+import PageHero from "@/components/PageHero";
+import {
+  FolderStackIcon,
+  GlobeIcon,
+  SparkIcon,
+  UsersIcon,
+} from "@/components/ui/icons";
 
 interface Project {
   id: string;
@@ -21,6 +28,8 @@ interface Project {
     members: number;
   };
 }
+
+const categories = ["web-app", "mobile", "research", "business", "startup"];
 
 export default function ProjectsPage() {
   const { data: session } = useSession();
@@ -40,9 +49,9 @@ export default function ProjectsPage() {
         const query = new URLSearchParams();
         if (selectedCategory) query.append("category", selectedCategory);
         if (creatorFilter) query.append("creator", creatorFilter);
-        const res = await fetch(`/api/projects?${query.toString()}`);
-        const data = await res.json();
-        setProjects(data.projects);
+        const response = await fetch(`/api/projects?${query.toString()}`);
+        const data = await response.json();
+        setProjects(data.projects || []);
       } catch (error) {
         console.error("Error fetching projects:", error);
       } finally {
@@ -53,103 +62,186 @@ export default function ProjectsPage() {
     fetchProjects();
   }, [selectedCategory, creatorFilter]);
 
-  const categories = ["web-app", "mobile", "research", "business", "startup"];
-
   return (
-    <div className="min-h-screen bg-slate-950">
+    <div className="app-shell">
       <Navbar />
 
-      {/* Guest CTA banner */}
-      {!session && (
-        <div className="bg-purple-900/30 border-b border-purple-800/50">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3 flex items-center justify-between gap-4">
-            <p className="text-purple-200 text-sm">
-              👋 You&apos;re browsing as a guest. Sign up to join or create projects!
-            </p>
-            <Link href="/signup">
-              <Button size="sm">Sign up free</Button>
-            </Link>
-          </div>
-        </div>
-      )}
-
-      {/* Content */}
-      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-        <div className="flex items-center justify-between mb-8">
-          <h1 className="text-4xl font-bold text-white">Collaboration Projects</h1>
-          {session && (
-            <Link href="/create-project">
-              <Button>+ New Project</Button>
-            </Link>
-          )}
-        </div>
-
-        {/* Filters */}
-        <div className="mb-8 flex gap-2 flex-wrap">
-          <Button
-            variant={selectedCategory === "" ? "default" : "outline"}
-            onClick={() => setSelectedCategory("")}
-          >
-            All Projects
-          </Button>
-          {categories.map((cat) => (
-            <Button
-              key={cat}
-              variant={selectedCategory === cat ? "default" : "outline"}
-              onClick={() => setSelectedCategory(cat)}
-            >
-              {cat.replace("-", " ").toUpperCase()}
-            </Button>
-          ))}
-        </div>
-
-        {/* Projects Grid */}
-        {isLoading ? (
-          <div className="text-center py-12">
-            <p className="text-slate-300">Loading projects...</p>
-          </div>
-        ) : projects.length === 0 ? (
-          <div className="text-center py-12">
-            <p className="text-slate-300 text-lg">No projects found</p>
-          </div>
-        ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {projects.map((project) => (
-              <Link key={project.id} href={`/project/${project.id}`}>
-                <div className="bg-slate-800 border border-slate-700 rounded-lg p-6 hover:border-purple-500 transition cursor-pointer h-full">
-                  <div className="mb-4">
-                    <span className="inline-block bg-purple-900 text-purple-200 px-3 py-1 rounded-full text-sm mb-2">
-                      {project.category.replace("-", " ")}
-                    </span>
-                  </div>
-                  <h3 className="text-xl font-bold text-white mb-2 line-clamp-2">
-                    {project.title}
-                  </h3>
-                  <p className="text-slate-400 text-sm mb-4 line-clamp-3">
-                    {project.description}
-                  </p>
-                  <div className="flex justify-between items-center pt-4 border-t border-slate-700">
-                    <div>
-                      <div className="text-sm text-slate-400 mb-1">
-                        {project.createdBy.name}
-                      </div>
-                      <div className="text-xs text-slate-500">
-                        {project._count.members} / {project.maxMembers} members
-                      </div>
-                    </div>
-                    <div className="w-8 h-8 rounded-full bg-slate-600 flex items-center justify-center text-xs font-bold text-white">
-                      {Math.round(
-                        (project._count.members / project.maxMembers) * 100
-                      )}
-                      %
-                    </div>
-                  </div>
-                </div>
+      <main className="page-shell space-y-8">
+        <PageHero
+          badge="Collaboration hub"
+          title="Project spaces that feel ready for serious teamwork."
+          description="Browse public collaborations, find strong ideas early, and join campus teams through cleaner project cards, progress cues, and member visibility."
+          actions={
+            session ? (
+              <Link href="/create-project">
+                <Button size="lg">Create a project</Button>
               </Link>
+            ) : (
+              <Link href="/signup">
+                <Button size="lg">Join to collaborate</Button>
+              </Link>
+            )
+          }
+          stats={[
+            { label: "Visible projects", value: `${projects.length}`, accent: "cyan" },
+            { label: "Project tracks", value: `${categories.length}`, accent: "amber" },
+            { label: "Team-ready", value: "Always", accent: "emerald" },
+          ]}
+          aside={
+            <div className="space-y-3">
+              {[
+                "Track team capacity before you click into the project.",
+                "Move from discovery into discussions, files, and members without friction.",
+                "Switch between categories to find the right collaboration rhythm.",
+              ].map((item) => (
+                <div
+                  key={item}
+                  className="flex items-start gap-3 rounded-[1.2rem] border border-slate-200 bg-white/70 px-4 py-3 dark:border-slate-800 dark:bg-slate-950/45"
+                >
+                  <SparkIcon className="mt-0.5 h-5 w-5 text-cyan-500" />
+                  <p className="text-sm leading-7 text-slate-600 dark:text-slate-300">
+                    {item}
+                  </p>
+                </div>
+              ))}
+            </div>
+          }
+        />
+
+        {!session && (
+          <section className="section-card flex flex-col gap-4 p-5 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <p className="text-sm font-semibold text-slate-900 dark:text-slate-100">
+                Explore first, join when ready
+              </p>
+              <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
+                Project browsing is open to guests so teams can make a strong first impression.
+              </p>
+            </div>
+            <Link href="/signup">
+              <Button>Sign up free</Button>
+            </Link>
+          </section>
+        )}
+
+        <section className="section-card p-6">
+          <div className="flex flex-wrap gap-3">
+            <button
+              type="button"
+              onClick={() => setSelectedCategory("")}
+              className={`rounded-full px-4 py-2 text-sm font-semibold transition-all ${
+                selectedCategory === ""
+                  ? "bg-slate-900 text-white dark:bg-slate-100 dark:text-slate-900"
+                  : "border border-slate-300 bg-white/70 text-slate-700 hover:border-cyan-300 dark:border-slate-700 dark:bg-slate-950/60 dark:text-slate-200"
+              }`}
+            >
+              All projects
+            </button>
+            {categories.map((category) => (
+              <button
+                key={category}
+                type="button"
+                onClick={() => setSelectedCategory(category)}
+                className={`rounded-full px-4 py-2 text-sm font-semibold transition-all ${
+                  selectedCategory === category
+                    ? "bg-cyan-500 text-white"
+                    : "border border-slate-300 bg-white/70 text-slate-700 hover:border-cyan-300 dark:border-slate-700 dark:bg-slate-950/60 dark:text-slate-200"
+                }`}
+              >
+                {category.replace("-", " ")}
+              </button>
             ))}
           </div>
+        </section>
+
+        {isLoading ? (
+          <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-3">
+            {Array.from({ length: 6 }).map((_, index) => (
+              <div key={index} className="section-card animate-pulse p-6">
+                <div className="h-6 w-28 rounded-full bg-slate-200 dark:bg-slate-800" />
+                <div className="mt-5 h-6 w-3/4 rounded bg-slate-200 dark:bg-slate-800" />
+                <div className="mt-3 h-4 w-full rounded bg-slate-200 dark:bg-slate-800" />
+                <div className="mt-2 h-4 w-4/5 rounded bg-slate-200 dark:bg-slate-800" />
+                <div className="mt-6 h-12 rounded-2xl bg-slate-200 dark:bg-slate-800" />
+              </div>
+            ))}
+          </div>
+        ) : projects.length === 0 ? (
+          <section className="section-card p-12 text-center">
+            <div className="mx-auto inline-flex h-14 w-14 items-center justify-center rounded-3xl bg-slate-100 dark:bg-slate-800">
+              <FolderStackIcon className="h-6 w-6 text-slate-500" />
+            </div>
+            <h2 className="mt-5 text-2xl font-semibold text-slate-950 dark:text-slate-50">
+              No projects found
+            </h2>
+            <p className="mt-3 text-sm leading-7 text-slate-500 dark:text-slate-400">
+              Try a different category or start the first project in this space.
+            </p>
+            {session && (
+              <div className="mt-6">
+                <Link href="/create-project">
+                  <Button>Create a project</Button>
+                </Link>
+              </div>
+            )}
+          </section>
+        ) : (
+          <section className="grid gap-5 md:grid-cols-2 xl:grid-cols-3">
+            {projects.map((project) => {
+              const progress = Math.min(
+                100,
+                Math.round((project._count.members / project.maxMembers) * 100)
+              );
+
+              return (
+                <Link key={project.id} href={`/project/${project.id}`} className="group">
+                  <article className="section-card flex h-full flex-col p-6 transition-transform duration-200 group-hover:-translate-y-1">
+                    <span className="tag-chip">{project.category.replace("-", " ")}</span>
+                    <h2 className="mt-5 line-clamp-2 text-xl font-semibold text-slate-950 transition-colors group-hover:text-cyan-700 dark:text-slate-50 dark:group-hover:text-cyan-300">
+                      {project.title}
+                    </h2>
+                    <p className="mt-3 line-clamp-3 text-sm leading-7 text-slate-600 dark:text-slate-300">
+                      {project.description}
+                    </p>
+                    <div className="mt-6 grid gap-3 sm:grid-cols-2">
+                      <div className="rounded-[1.1rem] border border-slate-200 bg-white/70 px-4 py-3 dark:border-slate-800 dark:bg-slate-950/45">
+                        <div className="flex items-center gap-2 text-xs uppercase tracking-[0.18em] text-slate-400">
+                          <UsersIcon className="h-4 w-4" />
+                          Team size
+                        </div>
+                        <p className="mt-2 text-lg font-semibold text-slate-900 dark:text-slate-100">
+                          {project._count.members}/{project.maxMembers}
+                        </p>
+                      </div>
+                      <div className="rounded-[1.1rem] border border-slate-200 bg-white/70 px-4 py-3 dark:border-slate-800 dark:bg-slate-950/45">
+                        <div className="flex items-center gap-2 text-xs uppercase tracking-[0.18em] text-slate-400">
+                          <GlobeIcon className="h-4 w-4" />
+                          Created by
+                        </div>
+                        <p className="mt-2 text-lg font-semibold text-slate-900 dark:text-slate-100">
+                          {project.createdBy.name}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="mt-6">
+                      <div className="h-2 rounded-full bg-slate-200 dark:bg-slate-800">
+                        <div
+                          className="h-2 rounded-full bg-gradient-to-r from-cyan-500 to-blue-500"
+                          style={{ width: `${progress}%` }}
+                        />
+                      </div>
+                      <div className="mt-3 flex items-center justify-between text-sm text-slate-500 dark:text-slate-400">
+                        <span>Team progress</span>
+                        <span>{progress}% full</span>
+                      </div>
+                    </div>
+                  </article>
+                </Link>
+              );
+            })}
+          </section>
         )}
-      </section>
+      </main>
     </div>
   );
 }

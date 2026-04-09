@@ -3,7 +3,14 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import { BrandLockup } from "@/components/Brand";
 import { Button } from "@/components/ui/button";
+import { PasswordInput } from "@/components/ui/PasswordInput";
+import {
+  ArrowRightIcon,
+  BriefcaseIcon,
+  CheckCircleIcon,
+} from "@/components/ui/icons";
 
 export default function FreelancerSignupPage() {
   const router = useRouter();
@@ -17,13 +24,13 @@ export default function FreelancerSignupPage() {
     confirmPassword: "",
   });
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: value }));
+  const handleChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = event.target;
+    setFormData((previous) => ({ ...previous, [name]: value }));
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSubmit = async (event: React.FormEvent) => {
+    event.preventDefault();
     setError("");
     setIsLoading(true);
 
@@ -70,132 +77,167 @@ export default function FreelancerSignupPage() {
       }
 
       router.push("/login?registered=true");
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "An error occurred");
+    } catch (signupError) {
+      setError(signupError instanceof Error ? signupError.message : "An error occurred");
     } finally {
       setIsLoading(false);
     }
   };
 
   return (
-    <main className="min-h-screen bg-gradient-to-b from-slate-50 to-white flex items-center justify-center px-4">
-      <div className="w-full max-w-md">
-        <div className="text-center mb-8">
-          <Link href="/signup" className="inline-flex items-center gap-2 text-slate-600 hover:text-slate-900 transition-colors text-sm">
-            ← Back to role selection
-          </Link>
-        </div>
-
-        <div className="bg-white border border-slate-200 rounded-xl p-8 shadow-sm">
-          <div className="flex items-center gap-3 mb-2">
-            <span className="text-4xl">💼</span>
-            <div>
-              <h1 className="text-3xl font-bold text-slate-900">Freelancer</h1>
-              <p className="text-slate-600 text-sm">Join as a skilled professional</p>
+    <main className="app-shell">
+      <div className="page-shell flex min-h-[calc(100dvh-4rem)] items-center">
+        <div className="grid w-full gap-8 lg:grid-cols-[0.95fr_1.05fr]">
+          <section className="hero-card">
+            <BrandLockup />
+            <div className="mt-8 inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-cyan-500 to-blue-500 text-white shadow-sm">
+              <BriefcaseIcon className="h-5 w-5" />
             </div>
-          </div>
-          <p className="text-slate-600 mb-8">Create your account to start completing gigs and earning money</p>
-
-          {error && (
-            <div className="bg-red-100 border border-red-300 text-red-800 px-4 py-3 rounded-md mb-6">
-              {error}
+            <h1 className="mt-5 text-4xl font-semibold tracking-[-0.04em] text-slate-950 dark:text-slate-50">
+              Join as a freelancer and make your skills easy to trust.
+            </h1>
+            <p className="mt-4 max-w-xl text-base leading-7 text-slate-600 dark:text-slate-300">
+              Build a stronger student profile, apply to paid tasks, and stand out with
+              a cleaner presentation from day one.
+            </p>
+            <div className="mt-8 space-y-3">
+              {[
+                "Apply for tasks and manage conversations in one dashboard",
+                "Display skills, links, and university background on your profile",
+                "Work inside a product that already feels deployment-ready",
+              ].map((item) => (
+                <div
+                  key={item}
+                  className="flex items-start gap-3 rounded-[1.2rem] border border-slate-200 bg-white/70 px-4 py-3 dark:border-slate-800 dark:bg-slate-950/45"
+                >
+                  <CheckCircleIcon className="mt-0.5 h-5 w-5 text-cyan-500" />
+                  <p className="text-sm leading-7 text-slate-600 dark:text-slate-300">
+                    {item}
+                  </p>
+                </div>
+              ))}
             </div>
-          )}
-
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div>
-              <label htmlFor="name" className="block text-sm font-medium text-slate-900 mb-2">
-                Full Name
-              </label>
-              <input
-                id="name"
-                name="name"
-                type="text"
-                required
-                value={formData.name}
-                onChange={handleChange}
-                className="w-full px-4 py-2 bg-white border border-slate-300 rounded-md text-slate-900 placeholder-slate-500 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-200"
-                placeholder="Greg Org"
-              />
+            <div className="mt-8">
+              <Link href="/signup">
+                <Button variant="outline">Back to role selection</Button>
+              </Link>
             </div>
+          </section>
 
-            <div>
-              <label htmlFor="username" className="block text-sm font-medium text-slate-900 mb-2">
-                Username
-              </label>
-              <input
-                id="username"
-                name="username"
-                type="text"
-                required
-                value={formData.username}
-                onChange={handleChange}
-                className="w-full px-4 py-2 bg-white border border-slate-300 rounded-md text-slate-900 placeholder-slate-500 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-200"
-                placeholder="greg_org"
-              />
-              <p className="text-slate-600 text-xs mt-1">3+ characters (letters, numbers, _, -)</p>
-            </div>
+          <section className="surface-card rounded-[2rem] p-6 sm:p-8">
+            <p className="page-badge">Freelancer account</p>
+            <h2 className="mt-5 text-3xl font-semibold tracking-[-0.03em] text-slate-950 dark:text-slate-50">
+              Create your freelancer profile
+            </h2>
+            <p className="mt-3 text-sm leading-7 text-slate-600 dark:text-slate-300">
+              Fill in the essentials now. You can enrich your public profile after you
+              sign in.
+            </p>
 
-            <div>
-              <label htmlFor="phone" className="block text-sm font-medium text-slate-900 mb-2">
-                Phone Number (Optional)
-              </label>
-              <input
-                id="phone"
-                name="phone"
-                type="tel"
-                value={formData.phone}
-                onChange={handleChange}
-                className="w-full px-4 py-2 bg-white border border-slate-300 rounded-md text-slate-900 placeholder-slate-500 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-200"
-                placeholder="+254700000000"
-              />
-            </div>
+            {error && (
+              <div className="mt-6 rounded-[1.2rem] border border-red-300 bg-red-50 px-4 py-3 text-sm text-red-800 dark:border-red-900 dark:bg-red-950/30 dark:text-red-200">
+                {error}
+              </div>
+            )}
 
-            <div>
-              <label htmlFor="password" className="block text-sm font-medium text-slate-900 mb-2">
-                Password
-              </label>
-              <input
-                id="password"
-                name="password"
-                type="password"
-                required
-                minLength={8}
-                value={formData.password}
-                onChange={handleChange}
-                className="w-full px-4 py-2 bg-white border border-slate-300 rounded-md text-slate-900 placeholder-slate-500 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-200"
-                placeholder="••••••••"
-              />
-              <p className="text-slate-600 text-xs mt-1">Minimum 8 characters</p>
-            </div>
+            <form onSubmit={handleSubmit} className="mt-8 space-y-4">
+              <div>
+                <label className="mb-2 block text-sm font-semibold text-slate-800 dark:text-slate-200">
+                  Full name
+                </label>
+                <input
+                  id="name"
+                  name="name"
+                  type="text"
+                  required
+                  value={formData.name}
+                  onChange={handleChange}
+                  className="app-input"
+                  placeholder="Your full name"
+                />
+              </div>
 
-            <div>
-              <label htmlFor="confirmPassword" className="block text-sm font-medium text-slate-900 mb-2">
-                Confirm Password
-              </label>
-              <input
-                id="confirmPassword"
-                name="confirmPassword"
-                type="password"
-                required
-                value={formData.confirmPassword}
-                onChange={handleChange}
-                className="w-full px-4 py-2 bg-white border border-slate-300 rounded-md text-slate-900 placeholder-slate-500 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-200"
-                placeholder="••••••••"
-              />
-            </div>
+              <div>
+                <label className="mb-2 block text-sm font-semibold text-slate-800 dark:text-slate-200">
+                  Username
+                </label>
+                <input
+                  id="username"
+                  name="username"
+                  type="text"
+                  required
+                  value={formData.username}
+                  onChange={handleChange}
+                  className="app-input"
+                  placeholder="your_username"
+                />
+                <p className="mt-2 text-xs text-slate-500 dark:text-slate-400">
+                  Use 3+ characters with letters, numbers, underscores, or hyphens.
+                </p>
+              </div>
 
-            <Button className="w-full bg-blue-600 hover:bg-blue-700 text-white" disabled={isLoading}>
-              {isLoading ? "Creating account..." : "Create Freelancer Account"}
-            </Button>
-          </form>
+              <div>
+                <label className="mb-2 block text-sm font-semibold text-slate-800 dark:text-slate-200">
+                  Phone number
+                </label>
+                <input
+                  id="phone"
+                  name="phone"
+                  type="tel"
+                  value={formData.phone}
+                  onChange={handleChange}
+                  className="app-input"
+                  placeholder="+254700000000"
+                />
+              </div>
 
-          <p className="text-slate-600 text-sm mt-6 text-center">
-            Already have an account?{" "}
-            <Link href="/login" className="text-blue-600 hover:text-blue-700 font-medium">
-              Login here
-            </Link>
-          </p>
+              <div className="grid gap-4 sm:grid-cols-2">
+                <div>
+                  <label className="mb-2 block text-sm font-semibold text-slate-800 dark:text-slate-200">
+                    Password
+                  </label>
+                  <PasswordInput
+                    id="password"
+                    name="password"
+                    required
+                    minLength={8}
+                    value={formData.password}
+                    onChange={handleChange}
+                    placeholder="Minimum 8 characters"
+                  />
+                </div>
+
+                <div>
+                  <label className="mb-2 block text-sm font-semibold text-slate-800 dark:text-slate-200">
+                    Confirm password
+                  </label>
+                  <PasswordInput
+                    id="confirmPassword"
+                    name="confirmPassword"
+                    required
+                    value={formData.confirmPassword}
+                    onChange={handleChange}
+                    placeholder="Repeat password"
+                  />
+                </div>
+              </div>
+
+              <Button className="mt-2 w-full" disabled={isLoading}>
+                {isLoading ? "Creating account..." : "Create freelancer account"}
+                {!isLoading && <ArrowRightIcon className="h-4 w-4" />}
+              </Button>
+            </form>
+
+            <p className="mt-6 text-center text-sm text-slate-600 dark:text-slate-300">
+              Already have an account?{" "}
+              <Link
+                href="/login"
+                className="font-semibold text-cyan-600 transition-colors hover:text-cyan-500 dark:text-cyan-300"
+              >
+                Log in here
+              </Link>
+            </p>
+          </section>
         </div>
       </div>
     </main>

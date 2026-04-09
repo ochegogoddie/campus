@@ -5,6 +5,13 @@
  * Run with: npm run db:test
  */
 
+try {
+  process.loadEnvFile?.(".env.local");
+  process.loadEnvFile?.(".env");
+} catch {
+  // Ignore env loading errors here and let Prisma report missing config.
+}
+
 async function testDatabaseConnection() {
   console.log("\nTesting database connection...\n");
 

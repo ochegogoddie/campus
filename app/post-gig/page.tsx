@@ -6,6 +6,8 @@ import { useSession } from "next-auth/react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import Navbar from "@/components/Navbar";
+import PageHero from "@/components/PageHero";
+import { SparkIcon, UploadIcon } from "@/components/ui/icons";
 
 export default function PostGigPage() {
   const { data: session } = useSession();
@@ -24,41 +26,44 @@ export default function PostGigPage() {
   });
 
   const handleChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
+    event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
   ) => {
-    const { name, value } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: value }));
+    const { name, value } = event.target;
+    setFormData((previous) => ({ ...previous, [name]: value }));
   };
 
-  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = Array.from(e.target.files || []);
+  const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(event.target.files || []);
     if (!files.length) return;
     setUploading(true);
     try {
       const urls: string[] = [];
       for (const file of files) {
-        const fd = new FormData();
-        fd.append("file", file);
-        const res = await fetch("/api/upload", { method: "POST", body: fd });
-        if (!res.ok) throw new Error(`Upload failed for ${file.name}`);
-        const { url } = await res.json();
+        const formDataPayload = new FormData();
+        formDataPayload.append("file", file);
+        const response = await fetch("/api/upload", {
+          method: "POST",
+          body: formDataPayload,
+        });
+        if (!response.ok) throw new Error(`Upload failed for ${file.name}`);
+        const { url } = await response.json();
         urls.push(url);
       }
-      setAttachments((prev) => [...prev, ...urls]);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Upload failed");
+      setAttachments((previous) => [...previous, ...urls]);
+    } catch (uploadError) {
+      setError(uploadError instanceof Error ? uploadError.message : "Upload failed");
     } finally {
       setUploading(false);
-      e.target.value = "";
+      event.target.value = "";
     }
   };
 
   const removeAttachment = (url: string) => {
-    setAttachments((prev) => prev.filter((u) => u !== url));
+    setAttachments((previous) => previous.filter((item) => item !== url));
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSubmit = async (event: React.FormEvent) => {
+    event.preventDefault();
     setError("");
     setIsLoading(true);
 
@@ -72,7 +77,7 @@ export default function PostGigPage() {
           category: formData.category,
           skillsNeeded: formData.skillsNeeded
             .split(",")
-            .map((s) => s.trim())
+            .map((skill) => skill.trim())
             .filter(Boolean),
           budget: parseFloat(formData.budget),
           duration: formData.duration,
@@ -86,8 +91,8 @@ export default function PostGigPage() {
       }
 
       router.push("/gigs?success=true");
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "An error occurred");
+    } catch (submitError) {
+      setError(submitError instanceof Error ? submitError.message : "An error occurred");
     } finally {
       setIsLoading(false);
     }
@@ -95,14 +100,21 @@ export default function PostGigPage() {
 
   if (!session) {
     return (
-      <div className="min-h-screen bg-gradient-to-b from-slate-50 to-white">
+      <div className="app-shell">
         <Navbar />
-        <div className="flex items-center justify-center min-h-[70vh]">
-          <div className="text-center">
-            <p className="text-slate-900 text-lg mb-4">Please log in to post a gig</p>
-            <Link href="/login">
-              <Button>Log In</Button>
-            </Link>
+        <div className="page-shell flex min-h-[70vh] items-center justify-center">
+          <div className="section-card max-w-lg p-10 text-center">
+            <p className="text-lg font-semibold text-slate-950 dark:text-slate-50">
+              Log in to post a task
+            </p>
+            <p className="mt-3 text-sm leading-7 text-slate-500 dark:text-slate-400">
+              Posting is available once you sign in to your account.
+            </p>
+            <div className="mt-6">
+              <Link href="/login">
+                <Button>Log in</Button>
+              </Link>
+            </div>
           </div>
         </div>
       </div>
@@ -110,24 +122,51 @@ export default function PostGigPage() {
   }
 
   return (
-    <main className="min-h-screen bg-gradient-to-b from-slate-50 to-white">
+    <div className="app-shell">
       <Navbar />
 
-      {/* Content */}
-      <section className="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-        <h1 className="text-3xl font-bold text-slate-900 mb-8">Post a New Gig</h1>
+      <main className="page-shell space-y-8">
+        <PageHero
+          badge="Publish a task"
+          title="Write a better brief and make the opportunity look serious from the start."
+          description="Clear titles, budget visibility, useful attachments, and structured details help the right person say yes faster."
+          stats={[
+            { label: "Attachments added", value: `${attachments.length}`, accent: "cyan" },
+            { label: "Budget field", value: formData.budget ? "Ready" : "Open", accent: "amber" },
+            { label: "Posting state", value: isLoading ? "Saving" : "Draft", accent: "emerald" },
+          ]}
+          aside={
+            <div className="space-y-3">
+              {[
+                "Use a strong title so people understand the task immediately.",
+                "Attach files when the work needs briefs, references, or assets.",
+                "List required skills to attract better-fit applicants.",
+              ].map((item) => (
+                <div
+                  key={item}
+                  className="flex items-start gap-3 rounded-[1.2rem] border border-slate-200 bg-white/70 px-4 py-3 dark:border-slate-800 dark:bg-slate-950/45"
+                >
+                  <SparkIcon className="mt-0.5 h-5 w-5 text-amber-500" />
+                  <p className="text-sm leading-7 text-slate-600 dark:text-slate-300">
+                    {item}
+                  </p>
+                </div>
+              ))}
+            </div>
+          }
+        />
 
         {error && (
-          <div className="bg-red-900/20 border border-red-700 text-red-300 px-4 py-3 rounded-md mb-6">
+          <div className="rounded-[1.2rem] border border-red-300 bg-red-50 px-4 py-3 text-sm text-red-800 dark:border-red-900 dark:bg-red-950/30 dark:text-red-200">
             {error}
           </div>
         )}
 
-        <form onSubmit={handleSubmit} className="bg-white border border-slate-200 rounded-lg p-8">
-          <div className="space-y-6">
+        <form onSubmit={handleSubmit} className="section-card p-6 sm:p-8">
+          <div className="grid gap-6">
             <div>
-              <label htmlFor="title" className="block text-sm font-medium text-slate-700 mb-2">
-                Gig Title *
+              <label className="mb-2 block text-sm font-semibold text-slate-800 dark:text-slate-200">
+                Task title
               </label>
               <input
                 id="title"
@@ -136,14 +175,14 @@ export default function PostGigPage() {
                 required
                 value={formData.title}
                 onChange={handleChange}
-                className="w-full px-4 py-2 bg-slate-50 border border-slate-300 rounded-md text-slate-900 placeholder-slate-500 focus:outline-none focus:border-amber-500"
-                placeholder="e.g., Write a 1000-word article about Python"
+                className="app-input"
+                placeholder="Write a title that explains the work clearly"
               />
             </div>
 
             <div>
-              <label htmlFor="description" className="block text-sm font-medium text-slate-700 mb-2">
-                Description *
+              <label className="mb-2 block text-sm font-semibold text-slate-800 dark:text-slate-200">
+                Description
               </label>
               <textarea
                 id="description"
@@ -151,22 +190,22 @@ export default function PostGigPage() {
                 required
                 value={formData.description}
                 onChange={handleChange}
-                className="w-full px-4 py-2 bg-slate-50 border border-slate-300 rounded-md text-slate-900 placeholder-slate-500 focus:outline-none focus:border-amber-500 min-h-32"
-                placeholder="Describe the details of your gig..."
+                className="app-textarea"
+                placeholder="Describe the deliverables, expectations, and what a strong applicant should know."
               />
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid gap-4 sm:grid-cols-2">
               <div>
-                <label htmlFor="category" className="block text-sm font-medium text-slate-700 mb-2">
-                  Category *
+                <label className="mb-2 block text-sm font-semibold text-slate-800 dark:text-slate-200">
+                  Category
                 </label>
                 <select
                   id="category"
                   name="category"
                   value={formData.category}
                   onChange={handleChange}
-                  className="w-full px-4 py-2 bg-slate-50 border border-slate-300 rounded-md text-slate-900 focus:outline-none focus:border-amber-500"
+                  className="app-select"
                 >
                   <option value="writing">Writing</option>
                   <option value="design">Design</option>
@@ -177,15 +216,15 @@ export default function PostGigPage() {
               </div>
 
               <div>
-                <label htmlFor="duration" className="block text-sm font-medium text-slate-700 mb-2">
-                  Duration *
+                <label className="mb-2 block text-sm font-semibold text-slate-800 dark:text-slate-200">
+                  Duration
                 </label>
                 <select
                   id="duration"
                   name="duration"
                   value={formData.duration}
                   onChange={handleChange}
-                  className="w-full px-4 py-2 bg-slate-50 border border-slate-300 rounded-md text-slate-900 focus:outline-none focus:border-amber-500"
+                  className="app-select"
                 >
                   <option value="one-time">One-time</option>
                   <option value="1-2 weeks">1-2 weeks</option>
@@ -196,8 +235,8 @@ export default function PostGigPage() {
             </div>
 
             <div>
-              <label htmlFor="budget" className="block text-sm font-medium text-slate-700 mb-2">
-                Budget (USD) *
+              <label className="mb-2 block text-sm font-semibold text-slate-800 dark:text-slate-200">
+                Budget
               </label>
               <input
                 id="budget"
@@ -208,14 +247,14 @@ export default function PostGigPage() {
                 step="0.01"
                 value={formData.budget}
                 onChange={handleChange}
-                className="w-full px-4 py-2 bg-slate-50 border border-slate-300 rounded-md text-slate-900 placeholder-slate-500 focus:outline-none focus:border-amber-500"
-                placeholder="50.00"
+                className="app-input"
+                placeholder="Set the payment amount"
               />
             </div>
 
             <div>
-              <label htmlFor="skillsNeeded" className="block text-sm font-medium text-slate-700 mb-2">
-                Required Skills (comma-separated)
+              <label className="mb-2 block text-sm font-semibold text-slate-800 dark:text-slate-200">
+                Required skills
               </label>
               <input
                 id="skillsNeeded"
@@ -223,30 +262,40 @@ export default function PostGigPage() {
                 type="text"
                 value={formData.skillsNeeded}
                 onChange={handleChange}
-                className="w-full px-4 py-2 bg-slate-50 border border-slate-300 rounded-md text-slate-900 placeholder-slate-500 focus:outline-none focus:border-amber-500"
-                placeholder="e.g., Python, Web Development, SEO"
+                className="app-input"
+                placeholder="Separate skills with commas"
               />
               {formData.skillsNeeded && (
-                <div className="flex flex-wrap gap-2 mt-2">
-                  {formData.skillsNeeded.split(",").map((s) => s.trim()).filter(Boolean).map((s) => (
-                    <span key={s} className="bg-amber-100 text-amber-900 text-xs px-2 py-1 rounded-full">{s}</span>
-                  ))}
+                <div className="mt-3 flex flex-wrap gap-2">
+                  {formData.skillsNeeded
+                    .split(",")
+                    .map((skill) => skill.trim())
+                    .filter(Boolean)
+                    .map((skill) => (
+                      <span key={skill} className="tag-chip">
+                        {skill}
+                      </span>
+                    ))}
                 </div>
               )}
             </div>
 
-            {/* File Attachments */}
             <div>
-              <label className="block text-sm font-medium text-slate-700 mb-2">
-                Attachments <span className="text-slate-500">(optional — PDF, images, docs up to 5 MB each)</span>
+              <label className="mb-2 block text-sm font-semibold text-slate-800 dark:text-slate-200">
+                Attachments
               </label>
-              <label className="flex items-center gap-3 px-4 py-3 bg-slate-50 border border-dashed border-slate-300 rounded-md cursor-pointer hover:border-amber-500 transition-colors group">
-                <svg className="w-5 h-5 text-slate-400 group-hover:text-amber-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
-                </svg>
-                <span className="text-slate-600 group-hover:text-slate-900 text-sm">
-                  {uploading ? "Uploading..." : "Click to upload files"}
+              <label className="flex cursor-pointer items-center gap-3 rounded-[1.2rem] border border-dashed border-slate-300 bg-white/70 px-4 py-4 transition-colors hover:border-amber-400 dark:border-slate-700 dark:bg-slate-950/45">
+                <span className="inline-flex h-10 w-10 items-center justify-center rounded-2xl bg-slate-900 text-white dark:bg-slate-100 dark:text-slate-900">
+                  <UploadIcon className="h-4 w-4" />
                 </span>
+                <div>
+                  <p className="text-sm font-semibold text-slate-900 dark:text-slate-100">
+                    {uploading ? "Uploading..." : "Upload supporting files"}
+                  </p>
+                  <p className="text-xs text-slate-500 dark:text-slate-400">
+                    PDF, images, docs, or text files up to 5 MB each.
+                  </p>
+                </div>
                 <input
                   type="file"
                   multiple
@@ -256,17 +305,23 @@ export default function PostGigPage() {
                   disabled={uploading}
                 />
               </label>
+
               {attachments.length > 0 && (
-                <ul className="mt-2 space-y-1">
+                <ul className="mt-3 space-y-2">
                   {attachments.map((url) => (
-                    <li key={url} className="flex items-center justify-between bg-slate-100 px-3 py-2 rounded-md">
-                      <span className="text-slate-700 text-sm truncate">📎 {url.split("/").pop()}</span>
+                    <li
+                      key={url}
+                      className="flex items-center justify-between rounded-[1rem] border border-slate-200 bg-white/70 px-4 py-3 text-sm dark:border-slate-800 dark:bg-slate-950/45"
+                    >
+                      <span className="truncate text-slate-600 dark:text-slate-300">
+                        {url.split("/").pop()}
+                      </span>
                       <button
                         type="button"
                         onClick={() => removeAttachment(url)}
-                        className="text-slate-500 hover:text-red-600 text-sm ml-2 shrink-0"
+                        className="font-semibold text-red-500 transition-colors hover:text-red-400"
                       >
-                        ✕
+                        Remove
                       </button>
                     </li>
                   ))}
@@ -274,12 +329,19 @@ export default function PostGigPage() {
               )}
             </div>
 
-            <Button type="submit" className="w-full" disabled={isLoading}>
-              {isLoading ? "Posting..." : "Post Gig"}
-            </Button>
+            <div className="flex flex-col gap-3 sm:flex-row">
+              <Button type="submit" className="sm:min-w-[180px]" disabled={isLoading}>
+                {isLoading ? "Posting..." : "Post task"}
+              </Button>
+              <Link href="/gigs">
+                <Button type="button" variant="outline">
+                  Cancel
+                </Button>
+              </Link>
+            </div>
           </div>
         </form>
-      </section>
-    </main>
+      </main>
+    </div>
   );
 }

@@ -6,15 +6,22 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import Navbar from "@/components/Navbar";
+import PageHero from "@/components/PageHero";
+import {
+  BriefcaseIcon,
+  ChartIcon,
+  ChatCircleIcon,
+  FolderStackIcon,
+  SparkIcon,
+  UsersIcon,
+} from "@/components/ui/icons";
 
 interface UserStats {
-  // personal
   gigs: number;
   projects: number;
   applications: number;
   notifications: number;
   unreadMessages: number;
-  // platform-wide
   totalUsers: number;
   totalGigs: number;
   totalProjects: number;
@@ -40,17 +47,17 @@ export default function DashboardPage() {
       router.push("/login");
       return;
     }
+
     if (status !== "authenticated") return;
 
     const fetchStats = async () => {
       try {
-        const res = await fetch("/api/user/stats");
-        if (res.ok) {
-          const data = await res.json();
-          setStats(data);
-        }
-      } catch (err) {
-        console.error("Failed to fetch stats", err);
+        const response = await fetch("/api/user/stats");
+        if (!response.ok) return;
+        const data = await response.json();
+        setStats(data);
+      } catch (error) {
+        console.error("Failed to fetch stats", error);
       } finally {
         setIsLoading(false);
       }
@@ -59,132 +66,194 @@ export default function DashboardPage() {
     fetchStats();
   }, [status, router]);
 
-  const Skeleton = () => (
-    <span className="inline-block w-10 h-8 bg-slate-200 rounded animate-pulse" />
-  );
+  if (status === "loading") {
+    return (
+      <div className="app-shell">
+        <Navbar />
+        <div className="page-shell">
+          <div className="hero-card animate-pulse">
+            <div className="h-6 w-28 rounded-full bg-slate-200 dark:bg-slate-800" />
+            <div className="mt-5 h-10 w-2/3 rounded bg-slate-200 dark:bg-slate-800" />
+            <div className="mt-4 h-5 w-1/2 rounded bg-slate-200 dark:bg-slate-800" />
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
-    <main className="min-h-screen bg-gradient-to-b from-white to-slate-50">
+    <div className="app-shell">
       <Navbar />
 
-      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-        {/* Header */}
-        <div className="mb-10">
-          <h1 className="text-4xl font-bold text-slate-900 mb-1">
-            Welcome back, {session?.user?.name}!
-          </h1>
-          <p className="text-slate-600 text-sm">{session?.user?.email}</p>
-        </div>
-
-        {/* ── Platform Stats ── */}
-        <div className="mb-4">
-          <h2 className="text-xs font-semibold text-slate-600 uppercase tracking-widest mb-3">
-            Platform Overview
-          </h2>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            {[
-              { label: "Students Registered", value: stats.totalUsers, icon: "👥", color: "text-blue-600" },
-              { label: "Gigs Posted", value: stats.totalGigs, icon: "📋", color: "text-emerald-600" },
-              { label: "Active Projects", value: stats.totalProjects, icon: "🤝", color: "text-purple-600" },
-            ].map((s) => (
-              <div key={s.label} className="bg-white border border-slate-200 rounded-xl p-6 flex items-center gap-4 shadow-sm hover:shadow-md transition-shadow">
-                <span className="text-3xl">{s.icon}</span>
-                <div>
-                  <div className={`text-3xl font-bold ${s.color}`}>
-                    {isLoading ? <Skeleton /> : s.value.toLocaleString()}
-                  </div>
-                  <div className="text-slate-600 text-sm mt-0.5">{s.label}</div>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        {/* ── My Activity ── */}
-        <div className="mb-10">
-          <h2 className="text-xs font-semibold text-slate-600 uppercase tracking-widest mb-3 mt-8">
-            My Activity
-          </h2>
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4">
-            {[
-              { label: "Gigs I Posted", value: stats.gigs, color: "text-emerald-600", href: "/gigs" },
-              { label: "Projects Joined", value: stats.projects, color: "text-purple-600", href: "/projects" },
-              { label: "Applications", value: stats.applications, color: "text-amber-600", href: "/gigs" },
-              { label: "Unread Messages", value: stats.unreadMessages, color: "text-rose-600", href: "/messages" },
-              { label: "Notifications", value: stats.notifications, color: "text-blue-600" },
-            ].map((s) => {
-              const card = (
-                <div className="bg-white border border-slate-200 rounded-xl p-5 hover:border-slate-300 transition-colors shadow-sm hover:shadow-md">
-                  <div className={`text-3xl font-bold ${s.color}`}>
-                    {isLoading ? <Skeleton /> : s.value}
-                  </div>
-                  <div className="text-slate-600 text-xs mt-1">{s.label}</div>
-                </div>
-              );
-
-              return s.href ? (
-                <Link key={s.label} href={s.href} className="cursor-pointer">
-                  {card}
-                </Link>
-              ) : (
-                <div key={s.label}>{card}</div>
-              );
-            })}
-          </div>
-        </div>
-
-        {/* ── Quick Actions ── */}
-        <h2 className="text-xs font-semibold text-slate-600 uppercase tracking-widest mb-3">
-          Quick Actions
-        </h2>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          <div className="bg-white border border-slate-200 rounded-xl p-7 shadow-sm hover:shadow-md transition-shadow flex flex-col">
-            <div className="text-2xl mb-3">🤝</div>
-            <h2 className="text-lg font-bold text-slate-900 mb-2">Collaboration Projects</h2>
-            <p className="text-slate-600 text-sm mb-5">
-              Create a project or join existing ones to collaborate with peers.
-            </p>
-            <div className="flex gap-3 mt-auto">
+      <main className="page-shell space-y-8">
+        <PageHero
+          badge="Personal workspace"
+          title={`Welcome back, ${session?.user?.name || "there"}.`}
+          description="Track your platform activity, jump back into conversations, and move quickly between gigs, projects, and profile updates."
+          actions={
+            <>
+              <Link href="/post-gig">
+                <Button size="lg">Post a task</Button>
+              </Link>
               <Link href="/create-project">
-                <Button size="sm">Create</Button>
+                <Button size="lg" variant="outline">
+                  Create a project
+                </Button>
               </Link>
-              <Link href="/projects">
-                <Button size="sm" variant="outline">Browse</Button>
-              </Link>
+            </>
+          }
+          stats={[
+            { label: "Unread messages", value: `${stats.unreadMessages}`, accent: "cyan" },
+            { label: "Applications", value: `${stats.applications}`, accent: "amber" },
+            { label: "Notifications", value: `${stats.notifications}`, accent: "emerald" },
+          ]}
+          aside={
+            <div className="space-y-3">
+              {[
+                "Keep your profile sharp so projects and gigs convert better.",
+                "Move from notifications into messages without losing context.",
+                "Use this dashboard as your launchpad for all platform activity.",
+              ].map((item) => (
+                <div
+                  key={item}
+                  className="flex items-start gap-3 rounded-[1.2rem] border border-slate-200 bg-white/70 px-4 py-3 dark:border-slate-800 dark:bg-slate-950/45"
+                >
+                  <SparkIcon className="mt-0.5 h-5 w-5 text-amber-500" />
+                  <p className="text-sm leading-7 text-slate-600 dark:text-slate-300">
+                    {item}
+                  </p>
+                </div>
+              ))}
+            </div>
+          }
+        />
+
+        <section className="grid gap-5 md:grid-cols-3">
+          {[
+            {
+              label: "Students registered",
+              value: stats.totalUsers,
+              icon: UsersIcon,
+              accent: "text-cyan-600 dark:text-cyan-300",
+            },
+            {
+              label: "Gigs posted",
+              value: stats.totalGigs,
+              icon: BriefcaseIcon,
+              accent: "text-emerald-600 dark:text-emerald-300",
+            },
+            {
+              label: "Projects active",
+              value: stats.totalProjects,
+              icon: FolderStackIcon,
+              accent: "text-amber-600 dark:text-amber-300",
+            },
+          ].map((item) => {
+            const Icon = item.icon;
+
+            return (
+              <article key={item.label} className="section-card p-6">
+                <div className="inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-slate-900 text-white shadow-sm dark:bg-slate-100 dark:text-slate-900">
+                  <Icon className="h-5 w-5" />
+                </div>
+                <p className={`mt-5 text-3xl font-semibold ${item.accent}`}>
+                  {isLoading ? "..." : item.value.toLocaleString()}
+                </p>
+                <p className="mt-2 text-sm text-slate-500 dark:text-slate-400">
+                  {item.label}
+                </p>
+              </article>
+            );
+          })}
+        </section>
+
+        <section className="grid gap-5 lg:grid-cols-[0.95fr_1.05fr]">
+          <div className="section-card p-6">
+            <div className="flex items-center gap-3">
+              <span className="inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-amber-500 to-orange-500 text-slate-950 shadow-sm">
+                <ChartIcon className="h-5 w-5" />
+              </span>
+              <div>
+                <p className="text-sm font-semibold uppercase tracking-[0.22em] text-slate-500 dark:text-slate-400">
+                  My activity
+                </p>
+                <h2 className="mt-1 text-2xl font-semibold text-slate-950 dark:text-slate-50">
+                  Your current pace across the platform
+                </h2>
+              </div>
+            </div>
+
+            <div className="mt-6 grid gap-4 sm:grid-cols-2">
+              {[
+                { label: "Gigs posted", value: stats.gigs },
+                { label: "Projects joined", value: stats.projects },
+                { label: "Applications", value: stats.applications },
+                { label: "Unread messages", value: stats.unreadMessages },
+              ].map((item) => (
+                <div
+                  key={item.label}
+                  className="rounded-[1.25rem] border border-slate-200 bg-white/70 p-4 dark:border-slate-800 dark:bg-slate-950/45"
+                >
+                  <p className="text-sm text-slate-500 dark:text-slate-400">{item.label}</p>
+                  <p className="mt-2 text-2xl font-semibold text-slate-950 dark:text-slate-50">
+                    {isLoading ? "..." : item.value}
+                  </p>
+                </div>
+              ))}
             </div>
           </div>
 
-          <div className="bg-white border border-slate-200 rounded-xl p-7 shadow-sm hover:shadow-md transition-shadow flex flex-col">
-            <div className="text-2xl mb-3">💬</div>
-            <h2 className="text-lg font-bold text-slate-900 mb-2">Messages</h2>
-            <p className="text-slate-600 text-sm mb-5">
-              Chat with collaborators and gig partners directly.
+          <div className="section-card p-6">
+            <p className="text-sm font-semibold uppercase tracking-[0.22em] text-slate-500 dark:text-slate-400">
+              Quick actions
             </p>
-            <div className="flex gap-3 items-center mt-auto">
-              <Link href="/messages">
-                <Button size="sm">Open Messages</Button>
-              </Link>
-              {stats.unreadMessages > 0 && (
-                <span className="bg-rose-500 text-white text-xs font-bold px-2 py-0.5 rounded-full">
-                  {stats.unreadMessages} new
-                </span>
-              )}
+            <div className="mt-5 grid gap-4">
+              {[
+                {
+                  href: "/messages",
+                  title: "Open messages",
+                  description: "Continue conversations with clients, freelancers, and teammates.",
+                  icon: ChatCircleIcon,
+                },
+                {
+                  href: "/profile",
+                  title: "Update profile",
+                  description: "Refresh your bio, links, skills, and public positioning.",
+                  icon: UsersIcon,
+                },
+                {
+                  href: "/projects",
+                  title: "Browse projects",
+                  description: "Jump into collaborations that match your current focus.",
+                  icon: FolderStackIcon,
+                },
+              ].map((item) => {
+                const Icon = item.icon;
+
+                return (
+                  <Link key={item.href} href={item.href} className="group">
+                    <div className="rounded-[1.25rem] border border-slate-200 bg-white/70 p-4 transition-transform duration-200 group-hover:-translate-y-0.5 dark:border-slate-800 dark:bg-slate-950/45">
+                      <div className="flex items-start gap-3">
+                        <span className="inline-flex h-10 w-10 items-center justify-center rounded-2xl bg-slate-900 text-white dark:bg-slate-100 dark:text-slate-900">
+                          <Icon className="h-4 w-4" />
+                        </span>
+                        <div>
+                          <h3 className="text-lg font-semibold text-slate-950 dark:text-slate-50">
+                            {item.title}
+                          </h3>
+                          <p className="mt-2 text-sm leading-7 text-slate-600 dark:text-slate-300">
+                            {item.description}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  </Link>
+                );
+              })}
             </div>
           </div>
-
-          <div className="bg-white border border-slate-200 rounded-xl p-7 shadow-sm hover:shadow-md transition-shadow flex flex-col">
-            <div className="text-2xl mb-3">👤</div>
-            <h2 className="text-lg font-bold text-slate-900 mb-2">My Profile</h2>
-            <p className="text-slate-600 text-sm mb-5">
-              Update your bio, skills, university and year of study.
-            </p>
-            <Link href="/profile" className="mt-auto">
-              <Button size="sm">Edit Profile</Button>
-            </Link>
-          </div>
-        </div>
-      </section>
-    </main>
+        </section>
+      </main>
+    </div>
   );
 }
-

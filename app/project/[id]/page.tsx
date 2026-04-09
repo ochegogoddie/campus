@@ -5,6 +5,7 @@ import { useParams, useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
 import Link from "next/link";
 import Navbar from "@/components/Navbar";
+import Avatar from "@/components/ui/Avatar";
 import { Button } from "@/components/ui/button";
 
 interface ProjectMember {
@@ -57,10 +58,15 @@ function fileIcon(mime: string) {
   return "📁";
 }
 function Av({ user, size=8 }: { user:{name:string;avatar?:string}; size?:number }) {
-  const sz = `w-${size} h-${size}`;
-  return user.avatar
-    ? <img src={user.avatar} alt={user.name} className={`${sz} rounded-full object-cover flex-shrink-0`} />
-    : <div className={`${sz} rounded-full bg-blue-600 flex items-center justify-center text-white font-bold flex-shrink-0 text-xs`}>{user.name.charAt(0).toUpperCase()}</div>;
+  return (
+    <Avatar
+      name={user.name}
+      src={user.avatar}
+      size={size * 4}
+      className="rounded-full flex-shrink-0"
+      tone="cyan"
+    />
+  );
 }
 
 export default function ProjectDetailPage() {
@@ -174,15 +180,15 @@ export default function ProjectDetailPage() {
   };
 
   if (loading) return (
-    <div className="min-h-screen bg-slate-950"><Navbar />
-      <div className="max-w-5xl mx-auto px-4 py-12 space-y-4">
+    <div className="app-shell project-detail-page"><Navbar />
+      <div className="page-shell max-w-5xl space-y-4">
         {[...Array(4)].map((_,i)=><div key={i} className="h-16 bg-slate-800 rounded-lg animate-pulse"/>)}
       </div>
     </div>
   );
   if (error||!project) return (
-    <div className="min-h-screen bg-slate-950"><Navbar />
-      <div className="max-w-5xl mx-auto px-4 py-20 text-center">
+    <div className="app-shell project-detail-page"><Navbar />
+      <div className="page-shell max-w-5xl py-20 text-center">
         <p className="text-red-400 text-lg mb-4">{error||"Project not found"}</p>
         <Link href="/projects"><Button variant="outline">Back to Projects</Button></Link>
       </div>
@@ -199,9 +205,9 @@ export default function ProjectDetailPage() {
   ];
 
   return (
-    <div className="min-h-screen bg-slate-950">
+    <div className="app-shell project-detail-page">
       <Navbar />
-      <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <div className="page-shell max-w-5xl py-8">
 
         {/* Header */}
         <div className="mb-6">
