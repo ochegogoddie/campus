@@ -114,9 +114,9 @@ export default function DashboardPage() {
 
       <main className="page-shell space-y-8">
         <PageHero
-          badge="Personal workspace"
+          badge="Dashboard"
           title={`Welcome back, ${session?.user?.name || "there"}.`}
-          description="Track your platform activity, jump back into conversations, and move quickly between gigs, projects, and profile updates."
+          description="View your messages, projects, gigs, and profile in one place."
           actions={
             <>
               <Link href="/post-gig">
@@ -137,9 +137,9 @@ export default function DashboardPage() {
           aside={
             <div className="space-y-3">
               {[
-                "Keep your profile sharp so projects and gigs convert better.",
-                "Move from notifications into messages without losing context.",
-                "Use this dashboard as your launchpad for all platform activity.",
+                "Check unread messages and notifications.",
+                "Open your active projects and gigs.",
+                "Use the buttons here to post work or create a project.",
               ].map((item) => (
                 <div
                   key={item}
@@ -288,7 +288,7 @@ export default function DashboardPage() {
                   My activity
                 </p>
                 <h2 className="mt-1 text-2xl font-semibold text-slate-950 dark:text-slate-50">
-                  Your current pace across the platform
+                  Your activity
                 </h2>
               </div>
             </div>
@@ -322,19 +322,19 @@ export default function DashboardPage() {
                 {
                   href: "/messages",
                   title: "Open messages",
-                  description: "Continue conversations with clients, freelancers, and teammates.",
+                  description: "Continue your conversations.",
                   icon: ChatCircleIcon,
                 },
                 {
                   href: "/profile",
                   title: "Update profile",
-                  description: "Refresh your bio, links, skills, and public positioning.",
+                  description: "Update your bio, links, and skills.",
                   icon: UsersIcon,
                 },
                 {
                   href: "/projects",
                   title: "Browse projects",
-                  description: "Jump into collaborations that match your current focus.",
+                  description: "Open available and active projects.",
                   icon: FolderStackIcon,
                 },
               ].map((item) => {

@@ -96,17 +96,16 @@ export default function ClientSignupPage() {
               <FolderStackIcon className="h-5 w-5" />
             </div>
             <h1 className="mt-5 text-4xl font-semibold tracking-[-0.04em] text-slate-950 dark:text-slate-50">
-              Join as a client and publish work that looks trustworthy.
+              Create a client account.
             </h1>
             <p className="mt-4 max-w-xl text-base leading-7 text-slate-600 dark:text-slate-300">
-              Post better-looking task briefs, discover campus talent, and manage work
-              opportunities through a cleaner interface.
+              Enter your details to register as a client.
             </p>
             <div className="mt-8 space-y-3">
               {[
-                "Post gigs and collaboration projects from one account",
-                "Move faster with clearer cards, messaging, and profile context",
-                "Give freelancers a stronger product experience from the start",
+                "Your email will receive a verification code",
+                "Choose a username and password for login",
+                "Add your phone number if needed",
               ].map((item) => (
                 <div
                   key={item}
@@ -132,8 +131,7 @@ export default function ClientSignupPage() {
               Create your client account
             </h2>
             <p className="mt-3 text-sm leading-7 text-slate-600 dark:text-slate-300">
-              Start with the essentials now and refine your profile after your first
-              login.
+              Complete the form below to continue.
             </p>
 
             {error && (

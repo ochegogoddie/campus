@@ -160,9 +160,7 @@ export function LoginForm() {
         </h1>
         <p className="mt-3 text-sm leading-7 text-slate-600 dark:text-slate-300">
           {step === "credentials"
-            ? isAdminAttempt
-              ? "Admin testing uses direct sign-in, so no email verification code is required here."
-              : "Pick up your tasks, conversations, and collaborations right where you left them."
+            ? "Enter your username or email and password to continue."
             : `Enter the 6-digit code sent to ${deliveryHint || "your email"} to finish signing in.`}
         </p>
       </div>
@@ -228,22 +226,14 @@ export function LoginForm() {
                 onChange={handleChange}
                 placeholder="Enter your password"
               />
-              {isAdminAttempt && (
-                <p className="mt-2 text-xs text-slate-500 dark:text-slate-400">
-                  Admin login goes straight in with username and password for
-                  easier testing.
-                </p>
-              )}
-              {!isAdminAttempt && (
-                <div className="mt-3 text-right">
-                  <Link
-                    href="/forgot-password"
-                    className="text-sm font-semibold text-cyan-700 transition-colors hover:text-cyan-600 dark:text-cyan-300"
-                  >
-                    Forgot password?
-                  </Link>
-                </div>
-              )}
+              <div className="mt-3 text-right">
+                <Link
+                  href="/forgot-password"
+                  className="text-sm font-semibold text-cyan-700 transition-colors hover:text-cyan-600 dark:text-cyan-300"
+                >
+                  Forgot password?
+                </Link>
+              </div>
             </div>
           </>
         ) : (

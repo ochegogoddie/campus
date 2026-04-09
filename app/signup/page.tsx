@@ -15,7 +15,7 @@ const roles = [
     href: "/signup/freelancer",
     title: "Freelancer",
     description:
-      "Offer your skills, apply for tasks, and build a profile that helps clients trust you fast.",
+      "Register to apply for tasks and join projects.",
     icon: BriefcaseIcon,
     accent: "from-cyan-500 to-blue-500",
   },
@@ -23,7 +23,7 @@ const roles = [
     href: "/signup/client",
     title: "Client",
     description:
-      "Post gigs, discover talent, and manage work opportunities with a sharper presentation.",
+      "Register to post gigs and manage projects.",
     icon: FolderStackIcon,
     accent: "from-amber-500 to-orange-500",
   },
@@ -37,19 +37,17 @@ export default function SignupPage() {
           <section className="hero-card">
             <BrandLockup />
             <h1 className="mt-8 text-4xl font-semibold tracking-[-0.04em] text-slate-950 dark:text-slate-50">
-              Choose how you want to grow inside Task Hive.
+              Choose your account type.
             </h1>
             <p className="mt-4 max-w-xl text-base leading-7 text-slate-600 dark:text-slate-300">
-              Start with the role that matches how you work today. You can post
-              opportunities, earn through gigs, and collaborate through polished project
-              spaces.
+              Select freelancer or client to continue with registration.
             </p>
 
             <div className="mt-8 grid gap-4">
               {[
-                "Profiles built to look credible from day one",
-                "Direct messaging and project collaboration tools included",
-                "Theme-aware, mobile-friendly pages across the whole app",
+                "Both account types use email verification",
+                "Choose the role that matches how you will use the app",
+                "You can sign in after your email is verified",
               ].map((item) => (
                 <div
                   key={item}
@@ -77,8 +75,7 @@ export default function SignupPage() {
                 Pick your entry point
               </h2>
               <p className="mt-3 text-sm leading-7 text-slate-600 dark:text-slate-300">
-                Each path gives you a tailored onboarding flow while keeping the same
-                professional product experience.
+                Choose the registration form that matches you.
               </p>
             </div>
 

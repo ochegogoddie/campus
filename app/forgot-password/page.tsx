@@ -157,17 +157,16 @@ export default function ForgotPasswordPage() {
           <section className="hero-card">
             <BrandLockup />
             <h1 className="mt-8 text-4xl font-semibold tracking-[-0.04em] text-slate-950 dark:text-slate-50">
-              Reset forgotten login details without losing the account.
+              Reset your login details.
             </h1>
             <p className="mt-4 max-w-xl text-base leading-7 text-slate-600 dark:text-slate-300">
-              Enter your registered email, receive a short-lived reset code, then
-              choose a new username and password in one guided flow.
+              Enter your registered email to receive a reset code.
             </p>
             <div className="mt-8 space-y-3">
               {[
-                "A code is sent only to the email attached to the account",
-                "You can change both the username and password during recovery",
-                "The built-in admin still stays on direct login for testing",
+                "The code is sent to the email on your account",
+                "You can set a new username and password",
+                "Use the latest code from your inbox",
               ].map((item) => (
                 <div
                   key={item}
@@ -196,8 +195,8 @@ export default function ForgotPasswordPage() {
             </h2>
             <p className="mt-3 text-sm leading-7 text-slate-600 dark:text-slate-300">
               {step === "request"
-                ? "We will send a verification code to the email address used during registration."
-                : `Use the 6-digit code sent to ${deliveryHint || "your email"} and choose a fresh username and password.`}
+                ? "We will send a code to the email address used during registration."
+                : `Use the 6-digit code sent to ${deliveryHint || "your email"} and choose a new username and password.`}
             </p>
 
             {info && (

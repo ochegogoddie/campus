@@ -88,17 +88,17 @@ export function VerifyAccountContent() {
           <section className="hero-card">
             <BrandLockup />
             <h1 className="mt-8 text-4xl font-semibold tracking-[-0.04em] text-slate-950 dark:text-slate-50">
-              Verify your email before the account goes live.
+              Verify your email.
             </h1>
             <p className="mt-4 max-w-xl text-base leading-7 text-slate-600 dark:text-slate-300">
               We sent a verification code to <span className="font-semibold">{email || "your email"}</span>.
-              Enter it here to activate the new account.
+              Enter it here to activate your account.
             </p>
             <div className="mt-8 space-y-3">
               {[
-                "The code is short-lived for safer account activation",
-                "If it expires, you can request a new one instantly",
-                "After verification, normal users will still confirm login through email codes",
+                "The code expires after a short time",
+                "You can request a new code if needed",
+                "After verification, you can sign in",
               ].map((item) => (
                 <div
                   key={item}
@@ -124,7 +124,7 @@ export function VerifyAccountContent() {
               Enter your 6-digit code
             </h2>
             <p className="mt-3 text-sm leading-7 text-slate-600 dark:text-slate-300">
-              Use the latest code we sent to your email inbox to finish account setup.
+              Use the latest code we sent to your email.
             </p>
 
             {!email && (

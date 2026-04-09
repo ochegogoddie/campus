@@ -96,17 +96,16 @@ export default function FreelancerSignupPage() {
               <BriefcaseIcon className="h-5 w-5" />
             </div>
             <h1 className="mt-5 text-4xl font-semibold tracking-[-0.04em] text-slate-950 dark:text-slate-50">
-              Join as a freelancer and make your skills easy to trust.
+              Create a freelancer account.
             </h1>
             <p className="mt-4 max-w-xl text-base leading-7 text-slate-600 dark:text-slate-300">
-              Build a stronger student profile, apply to paid tasks, and stand out with
-              a cleaner presentation from day one.
+              Enter your details to register as a freelancer.
             </p>
             <div className="mt-8 space-y-3">
               {[
-                "Apply for tasks and manage conversations in one dashboard",
-                "Display skills, links, and university background on your profile",
-                "Work inside a product that already feels deployment-ready",
+                "Your email will receive a verification code",
+                "Choose a username and password for login",
+                "Add your phone number if needed",
               ].map((item) => (
                 <div
                   key={item}
@@ -132,8 +131,7 @@ export default function FreelancerSignupPage() {
               Create your freelancer profile
             </h2>
             <p className="mt-3 text-sm leading-7 text-slate-600 dark:text-slate-300">
-              Fill in the essentials now. You can enrich your public profile after you
-              sign in.
+              Complete the form below to continue.
             </p>
 
             {error && (

@@ -387,14 +387,12 @@ export default function AdminDashboard() {
           <div className="flex flex-col gap-6 lg:flex-row lg:justify-between">
             <div className="max-w-3xl">
               <BrandLockup href="/admin" />
-              <p className="mt-8 page-badge">Admin workspace</p>
+              <p className="mt-8 page-badge">Admin</p>
               <h1 className="mt-5 text-4xl font-semibold tracking-[-0.04em] text-slate-950 dark:text-slate-50">
-                Manage users, outreach, projects, and platform access from one protected dashboard.
+                Admin dashboard
               </h1>
               <p className="mt-4 max-w-2xl text-base leading-7 text-slate-600 dark:text-slate-300">
-                The admin can now message all freelancers, message all clients,
-                send direct one-to-one notes, and temporarily lock accounts that
-                need moderation.
+                Manage users, messages, gigs, projects, and account access.
               </p>
             </div>
             <div className="max-w-md space-y-3">
@@ -403,7 +401,7 @@ export default function AdminDashboard() {
                   Signed in as {session?.user?.name || "Platform Admin"}
                 </p>
                 <p className="mt-2 text-sm text-slate-500 dark:text-slate-400">
-                  Protected admin routes, broadcast messaging, user locks, and no admin registration flow.
+                  Use the tabs below to manage users and messages.
                 </p>
               </div>
               <div className="flex flex-wrap gap-3">
@@ -518,7 +516,7 @@ export default function AdminDashboard() {
                     <div className="flex items-start gap-3">
                       <ShieldIcon className="mt-0.5 h-5 w-5 text-amber-600 dark:text-amber-300" />
                       <p className="text-sm leading-7 text-slate-600 dark:text-slate-300">
-                        Broadcast messages arrive as direct inbox messages for the selected audience, and temporary locks stop those users from signing in until the lock expires.
+                        Use messages and temporary locks to manage user access.
                       </p>
                     </div>
                   </div>
@@ -534,7 +532,7 @@ export default function AdminDashboard() {
               <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
                 <div>
                   <p className="text-sm font-semibold uppercase tracking-[0.22em] text-slate-500 dark:text-slate-400">User management</p>
-                  <h2 className="mt-1 text-2xl font-semibold text-slate-950 dark:text-slate-50">Edit registration details, change roles, send direct notes, and lock accounts when moderation is needed</h2>
+                  <h2 className="mt-1 text-2xl font-semibold text-slate-950 dark:text-slate-50">Edit users, roles, messages, and locks</h2>
                 </div>
                 <div className="flex flex-wrap gap-2">
                   {roleFilters.map((role) => (
@@ -768,7 +766,7 @@ export default function AdminDashboard() {
                 <div className="flex items-start justify-between gap-4">
                   <div>
                     <p className="text-sm font-semibold uppercase tracking-[0.22em] text-slate-500 dark:text-slate-400">Admin messaging</p>
-                    <h2 className="mt-1 text-2xl font-semibold text-slate-950 dark:text-slate-50">Reach all freelancers, all clients, or one user from the same control panel</h2>
+                    <h2 className="mt-1 text-2xl font-semibold text-slate-950 dark:text-slate-50">Message all freelancers, all clients, or one user</h2>
                   </div>
                   <Link href="/messages">
                     <Button variant="outline" size="sm">Open inbox</Button>
@@ -876,7 +874,7 @@ export default function AdminDashboard() {
                   <div className="flex items-start gap-3">
                     <ChatCircleIcon className="mt-0.5 h-5 w-5 text-cyan-600 dark:text-cyan-300" />
                     <p className="text-sm leading-7 text-slate-600 dark:text-slate-300">
-                      Use direct messages for one person, or switch the audience pill to push one announcement to every freelancer or every client in a single action.
+                      Choose one audience or one user, then send your message.
                     </p>
                   </div>
                 </div>
