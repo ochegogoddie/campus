@@ -18,7 +18,7 @@ Campus Gigs is a Next.js application for posting gigs, finding collaborators, ma
    npm install
    ```
 
-2. Configure the required environment variables in `.env.gigs` locally and in Render:
+2. Keep all local environment variables in `.env.gigs` only:
 
    ```env
    DATABASE_URL=
@@ -30,6 +30,7 @@ Campus Gigs is a Next.js application for posting gigs, finding collaborators, ma
    ```
 
    The built-in admin account is provisioned automatically by the server and does not require an environment variable.
+   The app scripts load `.env.gigs` automatically for local development and Prisma commands.
 
 3. Generate the Prisma client and sync the schema:
 
@@ -46,18 +47,22 @@ Campus Gigs is a Next.js application for posting gigs, finding collaborators, ma
 
 ## Render Deployment Notes
 
-- Use a PostgreSQL database on Render and paste its connection string into `DATABASE_URL`.
-- Set `NEXTAUTH_URL` to your Render service URL, for example `https://<your-render-service>.onrender.com`.
-- Copy the values from `.env.gigs` into the Render environment settings before the first deploy.
+- This repo now includes a [render.yaml](./render.yaml) Blueprint for a Node web service plus a Render PostgreSQL database.
+- The web service runs Prisma migrations with `npm run db:migrate:deploy` before each deploy instead of using `db push` during build.
+- `NEXTAUTH_URL` falls back to Render's built-in `RENDER_EXTERNAL_URL`, so the first deploy works without manually setting that variable.
+- If you later attach a custom domain, set `NEXTAUTH_URL` in Render to that custom HTTPS URL.
+- Cloudinary variables remain optional for deployment, but uploads return a clear `503` response until `CLOUDINARY_CLOUD_NAME`, `CLOUDINARY_API_KEY`, and `CLOUDINARY_API_SECRET` are configured.
+- Use `GET /api/health` as the health check endpoint. It validates required env vars and database connectivity.
 
 ## Available Scripts
 
 - `npm run dev` starts the local Next.js dev server.
-- `npm run build` generates the Prisma client, syncs the schema, and builds the app.
+- `npm run build` creates the production build.
 - `npm run start` starts the production server.
 - `npm run lint` runs ESLint.
 - `npm run db:push` syncs the Prisma schema to the configured database.
-- `npm run db:generate` regenerates the Prisma client.
+- `npm run db:migrate:deploy` applies committed Prisma migrations for production deploys.
+- `npm run db:generate` regenerates the Prisma client after schema changes.
 - `npm run db:studio` opens Prisma Studio.
 - `npm run db:reset` force-resets the configured database schema.
 - `npm run db:test` checks that Prisma can connect and query the database.

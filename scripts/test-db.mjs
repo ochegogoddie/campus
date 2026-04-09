@@ -5,17 +5,14 @@
  * Run with: npm run db:test
  */
 
-try {
-  process.loadEnvFile?.(".env.local");
-  process.loadEnvFile?.(".env");
-} catch {
-  // Ignore env loading errors here and let Prisma report missing config.
-}
+import { PrismaClient } from "@prisma/client";
+import { loadProjectEnv } from "./load-project-env.mjs";
+
+loadProjectEnv();
 
 async function testDatabaseConnection() {
   console.log("\nTesting database connection...\n");
 
-  const { PrismaClient } = await import("@prisma/client");
   const prisma = new PrismaClient();
 
   try {

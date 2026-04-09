@@ -3,15 +3,16 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev",
-    "build": "prisma generate && prisma db push --skip-generate && next build",
-    "start": "next start",
+    "dev": "node scripts/run-next.mjs dev",
+    "build": "node scripts/run-next.mjs build",
+    "start": "node scripts/run-next.mjs start",
     "lint": "eslint",
-    "db:push": "prisma db push",
-    "db:studio": "prisma studio",
-    "db:generate": "prisma generate",
-    "db:reset": "prisma db push --force-reset",
-    "db:test": "node scripts/test-db.js"
+    "db:push": "node scripts/run-prisma.mjs db push",
+    "db:studio": "node scripts/run-prisma.mjs studio",
+    "db:generate": "node scripts/run-prisma.mjs generate",
+    "db:migrate:deploy": "node scripts/run-prisma.mjs migrate deploy",
+    "db:reset": "node scripts/run-prisma.mjs db push --force-reset",
+    "db:test": "node scripts/test-db.mjs"
   },
   "dependencies": {
     "@prisma/client": "^5.8.0",

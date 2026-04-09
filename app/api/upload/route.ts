@@ -2,12 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth/next";
 import { authOptions } from "@/lib/auth";
 import { v2 as cloudinary } from "cloudinary";
-
-cloudinary.config({
-  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
-  api_key: process.env.CLOUDINARY_API_KEY,
-  api_secret: process.env.CLOUDINARY_API_SECRET,
-});
+import { getCloudinaryConfig } from "@/lib/env";
 
 const ALLOWED_TYPES = [
   "image/jpeg",
@@ -34,6 +29,20 @@ const MAX_SIZE = 20 * 1024 * 1024; // 20 MB
 // POST /api/upload — uploads a file to Cloudinary, returns { url, publicId }
 export async function POST(request: NextRequest) {
   try {
+    const cloudinarySettings = getCloudinaryConfig();
+
+    if (!cloudinarySettings.configured) {
+      return NextResponse.json(
+        {
+          error: "File uploads are not configured on this deployment.",
+          missingEnv: cloudinarySettings.missing,
+        },
+        { status: 503 }
+      );
+    }
+
+    cloudinary.config(cloudinarySettings.config);
+
     const session = await getServerSession(authOptions);
     if (!session?.user) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
