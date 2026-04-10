@@ -24,6 +24,9 @@ Campus Gigs is a Next.js application for posting gigs, finding collaborators, ma
    DATABASE_URL=
    NEXTAUTH_SECRET=
    NEXTAUTH_URL=http://localhost:3000
+   BREVO_API_KEY=
+   BREVO_SENDER_EMAIL=
+   BREVO_SENDER_NAME=Campus Gigs
    CLOUDINARY_CLOUD_NAME=
    CLOUDINARY_API_KEY=
    CLOUDINARY_API_SECRET=
@@ -51,8 +54,9 @@ Campus Gigs is a Next.js application for posting gigs, finding collaborators, ma
 - The web service runs Prisma migrations with `npm run db:migrate:deploy` before each deploy instead of using `db push` during build.
 - `NEXTAUTH_URL` falls back to Render's built-in `RENDER_EXTERNAL_URL`, so the first deploy works without manually setting that variable.
 - If you later attach a custom domain, set `NEXTAUTH_URL` in Render to that custom HTTPS URL.
+- Email-based signup, login verification, and password reset require `BREVO_API_KEY` and `BREVO_SENDER_EMAIL`. `BREVO_SENDER_NAME` is optional.
 - Cloudinary variables remain optional for deployment, but uploads return a clear `503` response until `CLOUDINARY_CLOUD_NAME`, `CLOUDINARY_API_KEY`, and `CLOUDINARY_API_SECRET` are configured.
-- Use `GET /api/health` as the health check endpoint. It validates required env vars and database connectivity.
+- Use `GET /api/health` as the health check endpoint. It validates required env vars, database connectivity, and reports whether email/cloudinary integrations are configured.
 
 ## Available Scripts
 

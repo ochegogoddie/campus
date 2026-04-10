@@ -3,7 +3,11 @@ import { Prisma } from "@prisma/client";
 import { hash } from "bcryptjs";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
-import { consumeAuthCode, PASSWORD_RESET_CODE_PURPOSE } from "@/lib/auth-codes";
+import {
+  consumeAuthCode,
+  PASSWORD_RESET_CODE_PURPOSE,
+  SIGNUP_CODE_PURPOSE,
+} from "@/lib/auth-codes";
 import { isBuiltInAdmin, isReservedUsername } from "@/lib/admin";
 
 const confirmResetSchema = z.object({
@@ -39,6 +43,29 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    const conflictingUser = await prisma.user.findFirst({
+      where: {
+        username: {
+          equals: normalizedUsername,
+          mode: "insensitive",
+        },
+        NOT: {
+          email: {
+            equals: normalizedEmail,
+            mode: "insensitive",
+          },
+        },
+      },
+      select: { id: true },
+    });
+
+    if (conflictingUser) {
+      return NextResponse.json(
+        { error: "That username is already in use. Please choose another one." },
+        { status: 400 }
+      );
+    }
+
     const challenge = await consumeAuthCode({
       challengeId,
       code,
@@ -63,13 +90,6 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    if (!challenge.user.emailVerifiedAt) {
-      return NextResponse.json(
-        { error: "Verify your email address before resetting credentials." },
-        { status: 400 }
-      );
-    }
-
     const passwordHash = await hash(password, 10);
 
     await prisma.$transaction([
@@ -78,12 +98,15 @@ export async function POST(request: NextRequest) {
         data: {
           username: normalizedUsername,
           password: passwordHash,
+          emailVerifiedAt: challenge.user.emailVerifiedAt ?? new Date(),
         },
       }),
       prisma.authCode.deleteMany({
         where: {
           userId: challenge.user.id,
-          purpose: PASSWORD_RESET_CODE_PURPOSE,
+          purpose: {
+            in: [PASSWORD_RESET_CODE_PURPOSE, SIGNUP_CODE_PURPOSE],
+          },
         },
       }),
     ]);

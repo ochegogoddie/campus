@@ -2,8 +2,12 @@ import { NextRequest, NextResponse } from "next/server";
 import { compare } from "bcryptjs";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
-import { createAuthCode, LOGIN_CODE_PURPOSE } from "@/lib/auth-codes";
-import { sendVerificationEmail } from "@/lib/brevo";
+import {
+  AUTH_CODE_TTL_MINUTES,
+  createAuthCode,
+  LOGIN_CODE_PURPOSE,
+} from "@/lib/auth-codes";
+import { resolveEmailDeliveryError, sendVerificationEmail } from "@/lib/brevo";
 import { ADMIN_USERNAME, isBuiltInAdmin } from "@/lib/admin";
 
 const requestCodeSchema = z.object({
@@ -91,7 +95,7 @@ export async function POST(request: NextRequest) {
       email: user.email,
       purpose: LOGIN_CODE_PURPOSE,
       userId: user.id,
-      ttlMinutes: 10,
+      ttlMinutes: AUTH_CODE_TTL_MINUTES,
     });
 
     await sendVerificationEmail({
@@ -101,7 +105,7 @@ export async function POST(request: NextRequest) {
       heading: "Confirm this login attempt",
       intro: "Use this code to finish signing in to your Campus Gigs account.",
       code,
-      expiresInMinutes: 10,
+      expiresInMinutes: AUTH_CODE_TTL_MINUTES,
     });
 
     return NextResponse.json({
@@ -119,6 +123,19 @@ export async function POST(request: NextRequest) {
     }
 
     console.error("Login code request error:", error);
+
+    const emailDeliveryError = resolveEmailDeliveryError(
+      error,
+      "Failed to send login code."
+    );
+
+    if (emailDeliveryError.handled) {
+      return NextResponse.json(
+        { error: emailDeliveryError.message },
+        { status: emailDeliveryError.status }
+      );
+    }
+
     return NextResponse.json(
       { error: "Failed to send login code." },
       { status: 500 }

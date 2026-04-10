@@ -12,6 +12,7 @@ const exploreLinks = [
   { href: "/projects", label: "Explore Projects" },
   { href: "/people", label: "Meet the Community" },
   { href: "/signup", label: "Create an Account" },
+  { href: "/cookies", label: "Cookie Notice" },
 ];
 
 export default function SiteFooter() {
@@ -90,7 +91,15 @@ export default function SiteFooter() {
 
           <div className="mt-8 flex flex-col gap-3 border-t border-slate-200 pt-5 text-sm text-slate-500 dark:border-slate-800 dark:text-slate-400 md:flex-row md:items-center md:justify-between">
             <p>&copy; 2026 Task Hive. Built for campus work that looks serious.</p>
-            <p>WhatsApp, call, and support shortcuts are available on every page.</p>
+            <div className="flex flex-wrap items-center gap-3">
+              <p>WhatsApp, call, support, and cookie information are available on every page.</p>
+              <Link
+                href="/cookies"
+                className="font-semibold text-cyan-700 transition-colors hover:text-cyan-600 dark:text-cyan-300"
+              >
+                Read cookie notice
+              </Link>
+            </div>
           </div>
         </div>
       </div>

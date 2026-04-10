@@ -1,8 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
-import { createAuthCode, PASSWORD_RESET_CODE_PURPOSE } from "@/lib/auth-codes";
-import { sendVerificationEmail } from "@/lib/brevo";
+import {
+  AUTH_CODE_TTL_MINUTES,
+  createAuthCode,
+  PASSWORD_RESET_CODE_PURPOSE,
+} from "@/lib/auth-codes";
+import { resolveEmailDeliveryError, sendVerificationEmail } from "@/lib/brevo";
 import { isBuiltInAdmin } from "@/lib/admin";
 
 const requestResetSchema = z.object({
@@ -28,7 +32,6 @@ export async function POST(request: NextRequest) {
         name: true,
         username: true,
         email: true,
-        emailVerifiedAt: true,
       },
     });
 
@@ -39,21 +42,11 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    if (!user.emailVerifiedAt) {
-      return NextResponse.json(
-        {
-          error:
-            "Verify this email address first before trying to reset the password.",
-        },
-        { status: 400 }
-      );
-    }
-
     const { challengeId, code } = await createAuthCode({
       email: user.email,
       purpose: PASSWORD_RESET_CODE_PURPOSE,
       userId: user.id,
-      ttlMinutes: 15,
+      ttlMinutes: AUTH_CODE_TTL_MINUTES,
     });
 
     await sendVerificationEmail({
@@ -64,7 +57,7 @@ export async function POST(request: NextRequest) {
       intro:
         "Use this code to reset your Campus Gigs login details and choose a new username and password.",
       code,
-      expiresInMinutes: 15,
+      expiresInMinutes: AUTH_CODE_TTL_MINUTES,
     });
 
     return NextResponse.json({
@@ -82,6 +75,19 @@ export async function POST(request: NextRequest) {
     }
 
     console.error("Password reset request error:", error);
+
+    const emailDeliveryError = resolveEmailDeliveryError(
+      error,
+      "Failed to send password reset code."
+    );
+
+    if (emailDeliveryError.handled) {
+      return NextResponse.json(
+        { error: emailDeliveryError.message },
+        { status: emailDeliveryError.status }
+      );
+    }
+
     return NextResponse.json(
       { error: "Failed to send password reset code." },
       { status: 500 }

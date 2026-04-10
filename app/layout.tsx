@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import CookieBanner from "@/components/CookieBanner";
 import AuthProvider from "@/components/providers/AuthProvider";
 import SiteFooter from "@/components/SiteFooter";
 import ThemeProvider from "@/components/providers/ThemeProvider";
@@ -23,6 +24,7 @@ export default function RootLayout({
           <AuthProvider>
             {children}
             <SiteFooter />
+            <CookieBanner />
           </AuthProvider>
           <ThemeSwitcher />
         </ThemeProvider>

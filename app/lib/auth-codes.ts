@@ -4,6 +4,7 @@ import { prisma } from "./prisma";
 export const SIGNUP_CODE_PURPOSE = "SIGNUP_VERIFY";
 export const LOGIN_CODE_PURPOSE = "LOGIN";
 export const PASSWORD_RESET_CODE_PURPOSE = "PASSWORD_RESET";
+export const AUTH_CODE_TTL_MINUTES = 10;
 
 function hashCode(code: string) {
   return createHash("sha256").update(code).digest("hex");
@@ -25,7 +26,7 @@ export async function createAuthCode(params: {
 }) {
   const code = generateVerificationCode();
   const now = new Date();
-  const expiresAt = addMinutes(now, params.ttlMinutes ?? 10);
+  const expiresAt = addMinutes(now, params.ttlMinutes ?? AUTH_CODE_TTL_MINUTES);
 
   await prisma.authCode.deleteMany({
     where: {

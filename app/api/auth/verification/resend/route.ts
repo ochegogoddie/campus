@@ -1,8 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
-import { createAuthCode, SIGNUP_CODE_PURPOSE } from "@/lib/auth-codes";
-import { sendVerificationEmail } from "@/lib/brevo";
+import {
+  AUTH_CODE_TTL_MINUTES,
+  createAuthCode,
+  SIGNUP_CODE_PURPOSE,
+} from "@/lib/auth-codes";
+import { resolveEmailDeliveryError, sendVerificationEmail } from "@/lib/brevo";
 
 const resendSchema = z.object({
   email: z.string().email(),
@@ -42,7 +46,7 @@ export async function POST(request: NextRequest) {
       email: user.email,
       purpose: SIGNUP_CODE_PURPOSE,
       userId: user.id,
-      ttlMinutes: 15,
+      ttlMinutes: AUTH_CODE_TTL_MINUTES,
     });
 
     await sendVerificationEmail({
@@ -52,7 +56,7 @@ export async function POST(request: NextRequest) {
       heading: "Here is your new verification code",
       intro: "Use this code to finish verifying your Campus Gigs account.",
       code,
-      expiresInMinutes: 15,
+      expiresInMinutes: AUTH_CODE_TTL_MINUTES,
     });
 
     return NextResponse.json({
@@ -67,6 +71,19 @@ export async function POST(request: NextRequest) {
     }
 
     console.error("Resend verification error:", error);
+
+    const emailDeliveryError = resolveEmailDeliveryError(
+      error,
+      "Failed to resend verification email."
+    );
+
+    if (emailDeliveryError.handled) {
+      return NextResponse.json(
+        { error: emailDeliveryError.message },
+        { status: emailDeliveryError.status }
+      );
+    }
+
     return NextResponse.json(
       { error: "Failed to resend verification email." },
       { status: 500 }

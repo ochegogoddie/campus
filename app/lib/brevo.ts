@@ -1,4 +1,6 @@
 const requiredBrevoKeys = ["BREVO_API_KEY", "BREVO_SENDER_EMAIL"] as const;
+const EMAIL_CONFIG_ERROR_PREFIX = "Brevo email delivery is not configured.";
+const EMAIL_REQUEST_ERROR_PREFIX = "Brevo email request failed:";
 
 function readValue(key: string) {
   const value = process.env[key];
@@ -21,6 +23,42 @@ export function getBrevoConfig() {
     apiKey: readValue("BREVO_API_KEY"),
     senderEmail: readValue("BREVO_SENDER_EMAIL"),
     senderName: readValue("BREVO_SENDER_NAME") || "Campus Gigs",
+  };
+}
+
+export function resolveEmailDeliveryError(
+  error: unknown,
+  fallbackMessage: string
+) {
+  if (!(error instanceof Error)) {
+    return {
+      handled: false,
+      status: 500,
+      message: fallbackMessage,
+    };
+  }
+
+  if (error.message.startsWith(EMAIL_CONFIG_ERROR_PREFIX)) {
+    return {
+      handled: true,
+      status: 503,
+      message: error.message,
+    };
+  }
+
+  if (error.message.startsWith(EMAIL_REQUEST_ERROR_PREFIX)) {
+    return {
+      handled: true,
+      status: 502,
+      message:
+        "Email delivery failed. Check your Brevo API key, sender email, and sender verification settings.",
+    };
+  }
+
+  return {
+    handled: false,
+    status: 500,
+    message: fallbackMessage,
   };
 }
 

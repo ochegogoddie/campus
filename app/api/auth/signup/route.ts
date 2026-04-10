@@ -2,8 +2,12 @@ import { NextRequest, NextResponse } from "next/server";
 import { hash } from "bcryptjs";
 import { prisma } from "@/lib/prisma";
 import { isReservedUsername } from "@/lib/admin";
-import { createAuthCode, SIGNUP_CODE_PURPOSE } from "@/lib/auth-codes";
-import { sendVerificationEmail } from "@/lib/brevo";
+import {
+  AUTH_CODE_TTL_MINUTES,
+  createAuthCode,
+  SIGNUP_CODE_PURPOSE,
+} from "@/lib/auth-codes";
+import { resolveEmailDeliveryError, sendVerificationEmail } from "@/lib/brevo";
 import { z } from "zod";
 import { Prisma } from "@prisma/client";
 
@@ -118,7 +122,7 @@ export async function POST(request: NextRequest) {
       email: user.email,
       purpose: SIGNUP_CODE_PURPOSE,
       userId: user.id,
-      ttlMinutes: 15,
+      ttlMinutes: AUTH_CODE_TTL_MINUTES,
     });
 
     await sendVerificationEmail({
@@ -129,7 +133,7 @@ export async function POST(request: NextRequest) {
       intro:
         "Use this verification code to finish creating your Campus Gigs account.",
       code,
-      expiresInMinutes: 15,
+      expiresInMinutes: AUTH_CODE_TTL_MINUTES,
     });
 
     return NextResponse.json(
@@ -170,6 +174,18 @@ export async function POST(request: NextRequest) {
     console.error("Signup error:", error);
     console.error("Error stack:", error instanceof Error ? error.stack : "No stack trace");
     const errorMessage = String(error);
+
+    const emailDeliveryError = resolveEmailDeliveryError(
+      error,
+      "An error occurred during signup. Please try again later."
+    );
+
+    if (emailDeliveryError.handled) {
+      return NextResponse.json(
+        { error: emailDeliveryError.message },
+        { status: emailDeliveryError.status }
+      );
+    }
     
     if (errorMessage.includes("Can't reach database") || errorMessage.includes("ECONNREFUSED")) {
       return NextResponse.json(
