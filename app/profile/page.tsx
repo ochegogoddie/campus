@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import Navbar from "@/components/Navbar";
 import { Button } from "@/components/ui/button";
+import { resolveUploadUrl } from "@/lib/upload-url";
 
 interface ProfileData {
   id: string;
@@ -218,7 +219,7 @@ export default function ProfilePage() {
                 {profile.avatar && !avatarLoadFailed ? (
                   // eslint-disable-next-line @next/next/no-img-element
                   <img
-                    src={profile.avatar}
+                    src={resolveUploadUrl(profile.avatar)}
                     alt={`${profile.name} avatar`}
                     className="w-full h-full object-cover"
                     onError={() => setAvatarLoadFailed(true)}

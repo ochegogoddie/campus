@@ -82,7 +82,7 @@ async function uploadToLocal(file: File) {
   await fs.writeFile(outputPath, Buffer.from(bytes));
 
   return {
-    secure_url: `/uploads/${fileName}`,
+    secure_url: `/api/uploads/${encodeURIComponent(fileName)}`,
     public_id: `local/${fileName}`,
   };
 }

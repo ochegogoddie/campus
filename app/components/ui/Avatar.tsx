@@ -1,4 +1,5 @@
 import type { CSSProperties } from "react";
+import { resolveUploadUrl } from "@/lib/upload-url";
 
 type AvatarTone = "amber" | "cyan" | "violet" | "slate";
 
@@ -26,12 +27,13 @@ export default function Avatar({
 }: AvatarProps) {
   const style = { width: size, height: size } satisfies CSSProperties;
   const initial = name.charAt(0).toUpperCase();
+  const resolvedSrc = resolveUploadUrl(src);
 
-  if (src) {
+  if (resolvedSrc) {
     return (
       // eslint-disable-next-line @next/next/no-img-element
       <img
-        src={src}
+        src={resolvedSrc}
         alt={name}
         style={style}
         className={`rounded-[18px] object-cover shadow-sm ${className}`}
