@@ -19,7 +19,7 @@ export async function GET() {
           database: "unknown",
           auth: "misconfigured",
           email: email.configured ? "configured" : "missing",
-          uploads: cloudinary.configured ? "configured" : "missing",
+          uploads: cloudinary.configured ? "cloudinary" : "local-fallback",
         },
         missingEnv: [
           ...requiredEnvMissing,
@@ -47,7 +47,7 @@ export async function GET() {
         database: "reachable",
         auth: "configured",
         email: email.configured ? "configured" : "missing",
-        uploads: cloudinary.configured ? "configured" : "missing",
+        uploads: cloudinary.configured ? "cloudinary" : "local-fallback",
       },
       missingEnv: optionalMissing,
       timestamp: new Date().toISOString(),
@@ -63,7 +63,7 @@ export async function GET() {
           database: "unreachable",
           auth: "configured",
           email: email.configured ? "configured" : "missing",
-          uploads: cloudinary.configured ? "configured" : "missing",
+          uploads: cloudinary.configured ? "cloudinary" : "local-fallback",
         },
         missingEnv: [
           ...(email.configured ? [] : email.missing),

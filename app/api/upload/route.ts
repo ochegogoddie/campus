@@ -3,12 +3,19 @@ import { getServerSession } from "next-auth/next";
 import { authOptions } from "@/lib/auth";
 import { v2 as cloudinary } from "cloudinary";
 import { getCloudinaryConfig } from "@/lib/env";
+import { promises as fs } from "node:fs";
+import path from "node:path";
+import { randomUUID } from "node:crypto";
 
 const ALLOWED_TYPES = [
   "image/jpeg",
   "image/png",
   "image/gif",
   "image/webp",
+  "image/avif",
+  "image/heic",
+  "image/heif",
+  "image/bmp",
   "image/svg+xml",
   "application/pdf",
   "application/msword",
@@ -26,22 +33,70 @@ const ALLOWED_TYPES = [
 
 const MAX_SIZE = 20 * 1024 * 1024; // 20 MB
 
-// POST /api/upload — uploads a file to Cloudinary, returns { url, publicId }
+function sanitizeFileName(fileName: string) {
+  const extension = path.extname(fileName).toLowerCase().replace(/[^a-z0-9.]/g, "");
+  const baseName = path.basename(fileName, extension).replace(/[^a-z0-9-_]/gi, "-");
+  return `${baseName || "file"}${extension}`;
+}
+
+async function uploadToLocal(file: File) {
+  const uploadsDir = path.join(process.cwd(), "public", "uploads");
+  await fs.mkdir(uploadsDir, { recursive: true });
+
+  const safeName = sanitizeFileName(file.name || "upload");
+  const fileName = `${Date.now()}-${randomUUID()}-${safeName}`;
+  const outputPath = path.join(uploadsDir, fileName);
+
+  const bytes = await file.arrayBuffer();
+  await fs.writeFile(outputPath, Buffer.from(bytes));
+
+  return {
+    secure_url: `/uploads/${fileName}`,
+    public_id: `local/${fileName}`,
+  };
+}
+
+async function uploadToCloudinary(
+  file: File,
+  config: { cloud_name: string; api_key: string; api_secret: string }
+) {
+  cloudinary.config(config);
+
+  const bytes = await file.arrayBuffer();
+  const buffer = Buffer.from(bytes);
+
+  const resourceType: "image" | "video" | "raw" = file.type.startsWith("image/")
+    ? "image"
+    : file.type.startsWith("video/") || file.type.startsWith("audio/")
+    ? "video"
+    : "raw";
+
+  return new Promise<{ secure_url: string; public_id: string }>((resolve, reject) => {
+    cloudinary.uploader
+      .upload_stream(
+        {
+          folder: "campus-gigs",
+          resource_type: resourceType,
+          use_filename: true,
+          unique_filename: true,
+        },
+        (error, result) => {
+          if (error || !result) {
+            reject(error ?? new Error("Upload failed"));
+            return;
+          }
+
+          resolve(result as { secure_url: string; public_id: string });
+        }
+      )
+      .end(buffer);
+  });
+}
+
+// POST /api/upload - upload to Cloudinary when configured, else store locally
 export async function POST(request: NextRequest) {
   try {
     const cloudinarySettings = getCloudinaryConfig();
-
-    if (!cloudinarySettings.configured) {
-      return NextResponse.json(
-        {
-          error: "File uploads are not configured on this deployment.",
-          missingEnv: cloudinarySettings.missing,
-        },
-        { status: 503 }
-      );
-    }
-
-    cloudinary.config(cloudinarySettings.config);
 
     const session = await getServerSession(authOptions);
     if (!session?.user) {
@@ -63,42 +118,20 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "File too large (max 20 MB)" }, { status: 400 });
     }
 
-    const bytes = await file.arrayBuffer();
-    const buffer = Buffer.from(bytes);
-
-    // Determine resource type for Cloudinary
-    const resourceType: "image" | "video" | "raw" = file.type.startsWith("image/")
-      ? "image"
-      : file.type.startsWith("video/") || file.type.startsWith("audio/")
-      ? "video"
-      : "raw";
-
-    // Upload to Cloudinary via upload_stream
-    const result = await new Promise<{ secure_url: string; public_id: string }>(
-      (resolve, reject) => {
-        cloudinary.uploader
-          .upload_stream(
-            {
-              folder: "campus-gigs",
-              resource_type: resourceType,
-              use_filename: true,
-              unique_filename: true,
-            },
-            (error, result) => {
-              if (error || !result) reject(error ?? new Error("Upload failed"));
-              else resolve(result as { secure_url: string; public_id: string });
-            }
-          )
-          .end(buffer);
-      }
-    );
+    const result = cloudinarySettings.configured
+      ? await uploadToCloudinary(file, cloudinarySettings.config)
+      : await uploadToLocal(file);
 
     return NextResponse.json(
-      { url: result.secure_url, publicId: result.public_id },
+      {
+        url: result.secure_url,
+        publicId: result.public_id,
+        storage: cloudinarySettings.configured ? "cloudinary" : "local",
+      },
       { status: 201 }
     );
   } catch (error) {
-    console.error("Error uploading to Cloudinary:", error);
+    console.error("Error uploading file:", error);
     return NextResponse.json({ error: "Failed to upload file" }, { status: 500 });
   }
 }

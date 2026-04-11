@@ -146,20 +146,33 @@ export default function ProfilePage() {
       const fd = new FormData();
       fd.append("file", file);
       const res = await fetch("/api/upload", { method: "POST", body: fd });
-      if (!res.ok) throw new Error("Upload failed");
-      const { url } = await res.json();
+      const uploadData: { url?: string; error?: string } = await res.json();
+      if (!res.ok) {
+        throw new Error(uploadData.error || "Upload failed");
+      }
+      if (!uploadData.url) {
+        throw new Error("Upload failed: no image URL returned");
+      }
+
       // Save avatar URL
-      await fetch("/api/user/profile", {
+      const saveRes = await fetch("/api/user/profile", {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ avatar: url }),
+        body: JSON.stringify({ avatar: uploadData.url }),
       });
-      setProfile((prev) => prev ? { ...prev, avatar: url } : prev);
+      const saveData: { error?: string } = await saveRes.json();
+      if (!saveRes.ok) {
+        throw new Error(saveData.error || "Failed to save profile photo");
+      }
+
+      setProfile((prev) => (prev ? { ...prev, avatar: uploadData.url } : prev));
+      await update({ image: uploadData.url });
     } catch (err) {
       console.error(err);
-      alert("Avatar upload failed.");
+      alert(err instanceof Error ? err.message : "Avatar upload failed.");
     } finally {
       setAvatarUploading(false);
+      e.target.value = "";
     }
   };
 
