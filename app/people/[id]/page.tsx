@@ -47,7 +47,7 @@ export default function PersonProfilePage() {
 
   useEffect(() => {
     if (!id) return;
-    fetch(`/api/people/${id}`)
+    fetch(`/api/people/${id}`, { cache: "no-store" })
       .then((r) => { if (r.status === 404) { setNotFound(true); return null; } return r.json(); })
       .then((d) => { if (d) setUser(d.user); })
       .catch(() => setNotFound(true))

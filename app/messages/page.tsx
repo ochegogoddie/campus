@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { useSession } from "next-auth/react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Navbar from "@/components/Navbar";
+import Avatar from "@/components/ui/Avatar";
 import { Button } from "@/components/ui/button";
 import { Suspense } from "react";
 
@@ -202,9 +203,13 @@ function MessagesContent() {
                       activePartnerId === convo.partnerId ? "bg-amber-50" : ""
                     }`}
                   >
-                    <div className="w-9 h-9 rounded-full bg-amber-600 flex-shrink-0 flex items-center justify-center text-sm font-bold text-white">
-                      {convo.partner.name.charAt(0).toUpperCase()}
-                    </div>
+                    <Avatar
+                      name={convo.partner.name}
+                      src={convo.partner.avatar}
+                      size={36}
+                      className="rounded-full flex-shrink-0"
+                      tone="amber"
+                    />
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center justify-between">
                         <span className="text-sm font-medium text-slate-900 truncate">
@@ -240,9 +245,13 @@ function MessagesContent() {
             <>
               {/* Chat header */}
               <div className="px-6 py-4 border-b border-slate-200 flex items-center gap-3">
-                <div className="w-9 h-9 rounded-full bg-amber-600 flex-shrink-0 flex items-center justify-center text-sm font-bold text-white">
-                  {activePartner?.name.charAt(0).toUpperCase()}
-                </div>
+                <Avatar
+                  name={activePartner?.name || "User"}
+                  src={activePartner?.avatar}
+                  size={36}
+                  className="rounded-full flex-shrink-0"
+                  tone="amber"
+                />
                 <div>
                   <h3 className="text-slate-900 font-semibold">{activePartner?.name}</h3>
                 </div>
@@ -269,9 +278,13 @@ function MessagesContent() {
                         className={`flex ${isOwn ? "justify-end" : "justify-start"}`}
                       >
                         {!isOwn && (
-                          <div className="w-7 h-7 rounded-full bg-slate-300 flex-shrink-0 flex items-center justify-center text-xs font-bold text-slate-700 mr-2 mt-1">
-                            {msg.sender.name.charAt(0).toUpperCase()}
-                          </div>
+                          <Avatar
+                            name={msg.sender.name}
+                            src={msg.sender.avatar}
+                            size={28}
+                            className="rounded-full flex-shrink-0 mr-2 mt-1"
+                            tone="slate"
+                          />
                         )}
                         <div className={`max-w-xs lg:max-w-md ${isOwn ? "items-end" : "items-start"} flex flex-col`}>
                           <div

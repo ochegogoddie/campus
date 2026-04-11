@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 
 type Params = { params: Promise<{ userId: string }> };
+export const dynamic = "force-dynamic";
 
 // GET /api/people/[userId] — public profile
 export async function GET(req: NextRequest, { params }: Params) {

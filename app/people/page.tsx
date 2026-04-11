@@ -41,7 +41,7 @@ export default function PeoplePage() {
     try {
       const params = new URLSearchParams({ page: String(currentPage), limit: "20" });
       if (query) params.set("search", query);
-      const response = await fetch(`/api/people?${params}`);
+      const response = await fetch(`/api/people?${params}`, { cache: "no-store" });
       const data = await response.json();
       setPeople(data.users ?? []);
       setTotal(data.total ?? 0);

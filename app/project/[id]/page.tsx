@@ -395,7 +395,7 @@ export default function ProjectDetailPage() {
                             ))}
                             {session&&!disc.closed&&(
                               <div className="flex gap-3 px-5 py-4 border-t border-slate-700/50 bg-slate-700/10">
-                                <Av user={{name:session.user?.name??"?", avatar:undefined}} size={7}/>
+                                <Av user={{name:session.user?.name??"?", avatar:session.user?.image ?? undefined}} size={7}/>
                                 <div className="flex-1 flex gap-2">
                                   <input type="text" placeholder="Write a reply…" value={openDiscId===disc.id?replyBody:""}
                                     onChange={e=>setReplyBody(e.target.value)}

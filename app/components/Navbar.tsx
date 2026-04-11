@@ -235,6 +235,7 @@ export default function Navbar() {
                 <Link href="/profile" className="inline-flex items-center gap-3" onClick={closeOverlays}>
                   <Avatar
                     name={session.user?.name || "User"}
+                    src={session.user?.image}
                     size={38}
                     className="rounded-full"
                     tone="cyan"
@@ -311,6 +312,7 @@ export default function Navbar() {
                 <div className="flex items-center gap-3 rounded-[1.2rem] border border-slate-200 bg-slate-50/90 p-3 dark:border-slate-800 dark:bg-slate-950/60">
                   <Avatar
                     name={session.user?.name || "User"}
+                    src={session.user?.image}
                     size={42}
                     className="rounded-full"
                     tone="violet"

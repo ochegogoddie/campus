@@ -41,6 +41,7 @@ export const authOptions: NextAuthOptions = {
               username: challenge.user.username,
               name: challenge.user.name,
               email: challenge.user.email,
+              image: challenge.user.avatar,
               role: challenge.user.role,
             };
           }
@@ -90,6 +91,7 @@ export const authOptions: NextAuthOptions = {
             username: user.username,
             name: user.name,
             email: user.email,
+            image: user.avatar,
             role: user.role,
           };
         } catch (error) {
@@ -103,12 +105,23 @@ export const authOptions: NextAuthOptions = {
     signIn: "/login",
   },
   callbacks: {
-    async jwt({ token, user }) {
+    async jwt({ token, user, trigger, session }) {
       if (user) {
         token.id = user.id;
         token.username = user.username;
         token.role = user.role;
+        token.image = user.image ?? null;
       }
+
+      if (trigger === "update") {
+        if (session?.name) {
+          token.name = session.name;
+        }
+        if (session?.image !== undefined) {
+          token.image = session.image;
+        }
+      }
+
       return token;
     },
     async session({ session, token }) {
@@ -116,6 +129,7 @@ export const authOptions: NextAuthOptions = {
         session.user.id = token.id as string;
         session.user.username = token.username as string;
         session.user.role = token.role as string;
+        session.user.image = (token.image as string | null | undefined) ?? null;
       }
       return session;
     },
