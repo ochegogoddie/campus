@@ -54,6 +54,7 @@ export default function ProfilePage() {
 
   // Avatar upload
   const [avatarUploading, setAvatarUploading] = useState(false);
+  const [avatarLoadFailed, setAvatarLoadFailed] = useState(false);
 
   useEffect(() => {
     if (status === "unauthenticated") router.push("/login");
@@ -87,6 +88,10 @@ export default function ProfilePage() {
     };
     fetchProfile();
   }, [status]);
+
+  useEffect(() => {
+    setAvatarLoadFailed(false);
+  }, [profile?.avatar]);
 
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
@@ -210,9 +215,14 @@ export default function ProfilePage() {
             {/* Avatar */}
             <div className="relative group shrink-0">
               <div className="w-20 h-20 rounded-full bg-blue-600 flex items-center justify-center text-white text-2xl font-bold overflow-hidden">
-                {profile.avatar ? (
+                {profile.avatar && !avatarLoadFailed ? (
                   // eslint-disable-next-line @next/next/no-img-element
-                  <img src={profile.avatar} alt="avatar" className="w-full h-full object-cover" />
+                  <img
+                    src={profile.avatar}
+                    alt={`${profile.name} avatar`}
+                    className="w-full h-full object-cover"
+                    onError={() => setAvatarLoadFailed(true)}
+                  />
                 ) : (
                   profile.name?.charAt(0).toUpperCase()
                 )}
