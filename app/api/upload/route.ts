@@ -7,16 +7,26 @@ import { promises as fs } from "node:fs";
 import path from "node:path";
 import { randomUUID } from "node:crypto";
 
-const ALLOWED_TYPES = [
-  "image/jpeg",
-  "image/png",
-  "image/gif",
-  "image/webp",
-  "image/avif",
-  "image/heic",
-  "image/heif",
-  "image/bmp",
-  "image/svg+xml",
+const IMAGE_EXTENSIONS = new Set([
+  ".jpg",
+  ".jpeg",
+  ".png",
+  ".gif",
+  ".webp",
+  ".avif",
+  ".heic",
+  ".heif",
+  ".bmp",
+  ".svg",
+  ".tif",
+  ".tiff",
+  ".ico",
+  ".jfif",
+  ".pjpeg",
+  ".pjp",
+]);
+
+const ALLOWED_NON_IMAGE_TYPES = [
   "application/pdf",
   "application/msword",
   "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
@@ -37,6 +47,27 @@ function sanitizeFileName(fileName: string) {
   const extension = path.extname(fileName).toLowerCase().replace(/[^a-z0-9.]/g, "");
   const baseName = path.basename(fileName, extension).replace(/[^a-z0-9-_]/gi, "-");
   return `${baseName || "file"}${extension}`;
+}
+
+function isImageLikeFile(file: File) {
+  const mimeType = file.type.toLowerCase();
+  const extension = path.extname(file.name || "").toLowerCase();
+
+  if (mimeType.startsWith("image/")) {
+    return true;
+  }
+
+  // Some devices/browsers send generic MIME types for valid image files.
+  if ((mimeType === "" || mimeType === "application/octet-stream") && IMAGE_EXTENSIONS.has(extension)) {
+    return true;
+  }
+
+  return false;
+}
+
+function isAllowedFileType(file: File) {
+  const mimeType = file.type.toLowerCase();
+  return isImageLikeFile(file) || ALLOWED_NON_IMAGE_TYPES.includes(mimeType);
 }
 
 async function uploadToLocal(file: File) {
@@ -65,7 +96,7 @@ async function uploadToCloudinary(
   const bytes = await file.arrayBuffer();
   const buffer = Buffer.from(bytes);
 
-  const resourceType: "image" | "video" | "raw" = file.type.startsWith("image/")
+  const resourceType: "image" | "video" | "raw" = isImageLikeFile(file)
     ? "image"
     : file.type.startsWith("video/") || file.type.startsWith("audio/")
     ? "video"
@@ -110,8 +141,11 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "No file provided" }, { status: 400 });
     }
 
-    if (!ALLOWED_TYPES.includes(file.type)) {
-      return NextResponse.json({ error: "File type not allowed" }, { status: 400 });
+    if (!isAllowedFileType(file)) {
+      return NextResponse.json(
+        { error: "File type not allowed. Please upload an image, document, video, audio, or zip file." },
+        { status: 400 }
+      );
     }
 
     if (file.size > MAX_SIZE) {
