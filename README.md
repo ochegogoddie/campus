@@ -55,7 +55,7 @@ Campus Gigs is a Next.js application for posting gigs, finding collaborators, ma
 - `NEXTAUTH_URL` falls back to Render's built-in `RENDER_EXTERNAL_URL`, so the first deploy works without manually setting that variable.
 - If you later attach a custom domain, set `NEXTAUTH_URL` in Render to that custom HTTPS URL.
 - Email-based signup, login verification, and password reset require `BREVO_API_KEY` and `BREVO_SENDER_EMAIL`. `BREVO_SENDER_NAME` is optional.
-- Cloudinary variables remain optional for deployment. When missing, uploads now fall back to local storage under `public/uploads`; when configured, uploads use Cloudinary.
+- Cloudinary variables remain optional for deployment. When missing, uploads now use a durable database-backed fallback served via `/api/uploads/...`; when configured, uploads use Cloudinary.
 - Use `GET /api/health` as the health check endpoint. It validates required env vars, database connectivity, and reports whether email/cloudinary integrations are configured.
 
 ## Available Scripts

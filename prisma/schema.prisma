@@ -42,9 +42,24 @@ model User {
   projectDiscussions   ProjectDiscussion[]
   discussionReplies    DiscussionReply[]
   uploadedFiles        ProjectFile[]
+  uploadedAssets       UploadedAsset[]
   authCodes            AuthCode[]
 
   @@index([email])
+}
+
+model UploadedAsset {
+  id           String   @id @default(cuid())
+  fileName     String
+  mimeType     String
+  size         Int      @default(0)
+  data         Bytes
+  createdAt    DateTime @default(now())
+
+  uploadedById String?
+  uploadedBy   User?    @relation(fields: [uploadedById], references: [id], onDelete: SetNull)
+
+  @@index([uploadedById])
 }
 
 model AuthCode {

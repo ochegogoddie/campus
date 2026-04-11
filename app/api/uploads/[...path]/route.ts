@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { promises as fs } from "node:fs";
 import path from "node:path";
+import { prisma } from "@/lib/prisma";
 
 type Params = { params: Promise<{ path: string[] }> };
 
@@ -49,6 +50,30 @@ export async function GET(_request: Request, { params }: Params) {
       return NextResponse.json({ error: "File not found" }, { status: 404 });
     }
 
+    const [mode, assetId] = segments;
+
+    if (mode === "db" && assetId) {
+      const asset = await prisma.uploadedAsset.findUnique({
+        where: { id: assetId },
+        select: {
+          data: true,
+          mimeType: true,
+        },
+      });
+
+      if (!asset) {
+        return NextResponse.json({ error: "File not found" }, { status: 404 });
+      }
+
+      return new NextResponse(new Uint8Array(asset.data), {
+        status: 200,
+        headers: {
+          "Content-Type": asset.mimeType || "application/octet-stream",
+          "Cache-Control": "public, max-age=31536000, immutable",
+        },
+      });
+    }
+
     const baseDir = path.resolve(LOCAL_UPLOADS_DIR);
     const filePath = path.resolve(path.join(LOCAL_UPLOADS_DIR, ...segments));
 
@@ -71,4 +96,3 @@ export async function GET(_request: Request, { params }: Params) {
     return NextResponse.json({ error: "File not found" }, { status: 404 });
   }
 }
-

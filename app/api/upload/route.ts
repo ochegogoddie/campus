@@ -3,9 +3,9 @@ import { getServerSession } from "next-auth/next";
 import { authOptions } from "@/lib/auth";
 import { v2 as cloudinary } from "cloudinary";
 import { getCloudinaryConfig } from "@/lib/env";
-import { promises as fs } from "node:fs";
 import path from "node:path";
 import { randomUUID } from "node:crypto";
+import { prisma } from "@/lib/prisma";
 
 const IMAGE_EXTENSIONS = new Set([
   ".jpg",
@@ -70,20 +70,32 @@ function isAllowedFileType(file: File) {
   return isImageLikeFile(file) || ALLOWED_NON_IMAGE_TYPES.includes(mimeType);
 }
 
-async function uploadToLocal(file: File) {
-  const uploadsDir = path.join(process.cwd(), "public", "uploads");
-  await fs.mkdir(uploadsDir, { recursive: true });
-
+async function uploadToDatabase(file: File, userId: string) {
   const safeName = sanitizeFileName(file.name || "upload");
   const fileName = `${Date.now()}-${randomUUID()}-${safeName}`;
-  const outputPath = path.join(uploadsDir, fileName);
 
   const bytes = await file.arrayBuffer();
-  await fs.writeFile(outputPath, Buffer.from(bytes));
+  const buffer = Buffer.from(bytes);
+
+  const asset = await prisma.uploadedAsset.create({
+    data: {
+      fileName,
+      mimeType: file.type || "application/octet-stream",
+      size: file.size,
+      data: buffer,
+      uploadedById: userId,
+    },
+    select: {
+      id: true,
+      fileName: true,
+    },
+  });
+
+  const encodedName = encodeURIComponent(asset.fileName);
 
   return {
-    secure_url: `/api/uploads/${encodeURIComponent(fileName)}`,
-    public_id: `local/${fileName}`,
+    secure_url: `/api/uploads/db/${asset.id}/${encodedName}`,
+    public_id: `db/${asset.id}`,
   };
 }
 
@@ -152,9 +164,11 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "File too large (max 20 MB)" }, { status: 400 });
     }
 
+    const userId = session.user.id;
+
     const result = cloudinarySettings.configured
       ? await uploadToCloudinary(file, cloudinarySettings.config)
-      : await uploadToLocal(file);
+      : await uploadToDatabase(file, userId);
 
     return NextResponse.json(
       {
