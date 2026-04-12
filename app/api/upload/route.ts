@@ -6,6 +6,7 @@ import { getCloudinaryConfig } from "@/lib/env";
 import path from "node:path";
 import { randomUUID } from "node:crypto";
 import { prisma } from "@/lib/prisma";
+import { promises as fs } from "node:fs";
 
 const IMAGE_EXTENSIONS = new Set([
   ".jpg",
@@ -99,6 +100,23 @@ async function uploadToDatabase(file: File, userId: string) {
   };
 }
 
+async function uploadToFilesystem(file: File) {
+  const uploadsDir = path.join(process.cwd(), "public", "uploads");
+  await fs.mkdir(uploadsDir, { recursive: true });
+
+  const safeName = sanitizeFileName(file.name || "upload");
+  const fileName = `${Date.now()}-${randomUUID()}-${safeName}`;
+  const outputPath = path.join(uploadsDir, fileName);
+
+  const bytes = await file.arrayBuffer();
+  await fs.writeFile(outputPath, Buffer.from(bytes));
+
+  return {
+    secure_url: `/api/uploads/${encodeURIComponent(fileName)}`,
+    public_id: `local/${fileName}`,
+  };
+}
+
 async function uploadToCloudinary(
   file: File,
   config: { cloud_name: string; api_key: string; api_secret: string }
@@ -166,15 +184,30 @@ export async function POST(request: NextRequest) {
 
     const userId = session.user.id;
 
-    const result = cloudinarySettings.configured
-      ? await uploadToCloudinary(file, cloudinarySettings.config)
-      : await uploadToDatabase(file, userId);
+    let result:
+      | { secure_url: string; public_id: string; storage: "cloudinary" }
+      | { secure_url: string; public_id: string; storage: "db" }
+      | { secure_url: string; public_id: string; storage: "local" };
+
+    if (cloudinarySettings.configured) {
+      const uploaded = await uploadToCloudinary(file, cloudinarySettings.config);
+      result = { ...uploaded, storage: "cloudinary" };
+    } else {
+      try {
+        const uploaded = await uploadToDatabase(file, userId);
+        result = { ...uploaded, storage: "db" };
+      } catch (dbError) {
+        console.error("DB upload fallback failed, using filesystem fallback:", dbError);
+        const uploaded = await uploadToFilesystem(file);
+        result = { ...uploaded, storage: "local" };
+      }
+    }
 
     return NextResponse.json(
       {
         url: result.secure_url,
         publicId: result.public_id,
-        storage: cloudinarySettings.configured ? "cloudinary" : "local",
+        storage: result.storage,
       },
       { status: 201 }
     );

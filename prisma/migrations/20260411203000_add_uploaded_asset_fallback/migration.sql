@@ -1,4 +1,4 @@
-﻿-- Durable fallback storage for uploads when Cloudinary is not configured
+-- Durable fallback storage for uploads when Cloudinary is not configured
 CREATE TABLE "UploadedAsset" (
     "id" TEXT NOT NULL,
     "fileName" TEXT NOT NULL,
